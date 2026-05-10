@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 
 /* ═══════════════════════════════════════════════════════════
-   GROWLIA — Landing page completa
+   GROWLIA — Landing con Chat IA Funcional
 ═══════════════════════════════════════════════════════════ */
+
+const API_URL = 'https://api.growlia.es'  // ← URL del backend
 
 const C = {
   white:     '#FFFFFF',
@@ -39,7 +41,7 @@ const SVG: Record<string, JSX.Element> = {
   microsoft_ads: <svg viewBox="0 0 48 48" width="100%" height="100%"><rect x="4" y="4" width="18" height="18" rx="2" fill="#F25022"/><rect x="26" y="4" width="18" height="18" rx="2" fill="#7FBA00"/><rect x="4" y="26" width="18" height="18" rx="2" fill="#00A4EF"/><rect x="26" y="26" width="18" height="18" rx="2" fill="#FFB900"/></svg>,
   google_sheets: <svg viewBox="0 0 48 48" width="100%" height="100%"><path fill="#34A853" d="M30 4H14a4 4 0 00-4 4v32a4 4 0 004 4h20a4 4 0 004-4V18L30 4z"/><path fill="#188038" d="M30 4v14h14L30 4z"/><path fill="#fff" d="M14 26h20v2H14zm0 5h20v2H14zm0 5h14v2H14zm0-15h20v2H14z"/></svg>,
   google_slides: <svg viewBox="0 0 48 48" width="100%" height="100%"><path fill="#FBBC04" d="M30 4H14a4 4 0 00-4 4v32a4 4 0 004 4h20a4 4 0 004-4V18L30 4z"/><path fill="#F29900" d="M30 4v14h14L30 4z"/><rect x="15" y="22" width="18" height="14" rx="1" fill="#fff"/></svg>,
-  shopify: <svg viewBox="0 0 48 48" width="100%" height="100%"><path fill="#95BF47" d="M33 9s-.5-.4-1.4-.4c-.5 0-1.1.3-1.6.7C28.2 7.5 26 6.5 22 6.5c-.9 0-1.9.1-2.8.3A4.5 4.5 0 0015.3 10c-1.8.5-3.7 2-4.6 4C8 18 7.5 22 7.5 24.5 7.5 34 13 42 24 42s17-7.5 17-15.5c0-7.5-3.5-15-8-17.5z"/><path fill="#5E8E3E" d="M31.5 9s-1 7.5-8 7.5c-1.3 0-2.6-.3-3.8-.7L18 27s1.8 2 7.5 2 9.5-4.5 9.5-9.5V9h-3.5z"/></svg>,
+  shopify: <svg viewBox="0 0 48 48" width="100%" height="100%"><path fill="#95BF47" d="M33 9s-.5-.4-1.4-.4c-.5 0-1.1.3-1.6.7C28.2 7.5 26 6.5 22 6.5c-.9 0-1.9.1-2.8.3A4.5 4.5 0 0015.3 10c-1.8.5-3.7 2-4.6 4C8 18 7.5 22 7.5 24.5 7.5 34 13 42 24 42s17-7.5 17-15.5c0-7.5-3.5-15-8-17.5z"/></svg>,
   bigquery: <svg viewBox="0 0 48 48" width="100%" height="100%"><path fill="#4285F4" d="M24 6L6 17v14l18 11 18-11V17L24 6z" opacity=".4"/><path fill="#4285F4" d="M6 17l18 11V6L6 17z"/><path fill="#1A73E8" d="M24 28l18-11L24 6v22z"/></svg>,
   hubspot: <svg viewBox="0 0 48 48" width="100%" height="100%"><circle cx="24" cy="24" r="22" fill="#FF7A59"/><path fill="#fff" d="M30 16v-4h-6v4a6 6 0 00-4 5.5 6 6 0 003 5.2V34h8v-7.3A6 6 0 0034 21.5 6 6 0 0030 16zm-3 10a3 3 0 110-6 3 3 0 010 6z"/></svg>,
   klaviyo: <svg viewBox="0 0 48 48" width="100%" height="100%"><circle cx="24" cy="24" r="22" fill="#1C1C1C"/><path fill="#fff" d="M14 14h6v20h-6zm8 0h12l-6 10 6 10H22V14z"/></svg>,
@@ -54,46 +56,46 @@ function Logo({ id, size = 26 }: { id: string; size?: number }) {
 }
 
 const CONNECTIONS_DATA = [
-  { id: 'google_ads',       name: 'Google Ads',           desc: 'Manage Google Ads campaigns',           cat: 'Ads' },
-  { id: 'meta',             name: 'Meta Ads',             desc: 'Facebook & Instagram Ads',              cat: 'Ads' },
-  { id: 'google_analytics', name: 'Google Analytics 4',  desc: 'Track and analyze website traffic',     cat: 'Analytics' },
-  { id: 'tiktok',           name: 'TikTok Ads',           desc: 'Manage TikTok Ads campaigns',           cat: 'Ads' },
-  { id: 'linkedin',         name: 'LinkedIn Ads',         desc: 'Manage LinkedIn Ads campaigns',         cat: 'Ads' },
-  { id: 'microsoft_ads',    name: 'Microsoft Ads',        desc: 'Manage Microsoft Ads campaigns',        cat: 'Ads' },
-  { id: 'google_sheets',    name: 'Google Sheets',        desc: 'Read and write data',                   cat: 'Productivity' },
-  { id: 'google_slides',    name: 'Google Slides',        desc: 'Create automated presentations',        cat: 'Productivity' },
-  { id: 'shopify',          name: 'Shopify',              desc: 'Access Shopify store data',             cat: 'eCommerce' },
-  { id: 'bigquery',         name: 'BigQuery',             desc: 'Query and analyze big data',            cat: 'Data' },
-  { id: 'hubspot',          name: 'HubSpot',              desc: 'Manage CRM contacts and deals',         cat: 'CRM' },
-  { id: 'klaviyo',          name: 'Klaviyo',              desc: 'Email marketing automation',            cat: 'Email' },
+  { id: 'google_ads',       name: 'Google Ads',           desc: 'Gestiona campañas de Google Ads',           cat: 'Anuncios' },
+  { id: 'meta',             name: 'Meta Ads',             desc: 'Anuncios en Facebook e Instagram',          cat: 'Anuncios' },
+  { id: 'google_analytics', name: 'Google Analytics 4',  desc: 'Analiza tráfico y conversiones',            cat: 'Analítica' },
+  { id: 'tiktok',           name: 'TikTok Ads',           desc: 'Gestiona campañas en TikTok',               cat: 'Anuncios' },
+  { id: 'linkedin',         name: 'LinkedIn Ads',         desc: 'Anuncios B2B en LinkedIn',                  cat: 'Anuncios' },
+  { id: 'microsoft_ads',    name: 'Microsoft Ads',        desc: 'Campañas en Bing y Microsoft',              cat: 'Anuncios' },
+  { id: 'google_sheets',    name: 'Google Sheets',        desc: 'Lee y escribe datos automáticamente',       cat: 'Productividad' },
+  { id: 'google_slides',    name: 'Google Slides',        desc: 'Genera presentaciones automatizadas',       cat: 'Productividad' },
+  { id: 'shopify',          name: 'Shopify',              desc: 'Datos de tu tienda en tiempo real',         cat: 'eCommerce' },
+  { id: 'bigquery',         name: 'BigQuery',             desc: 'Análisis de big data',                      cat: 'Datos' },
+  { id: 'hubspot',          name: 'HubSpot',              desc: 'CRM, contactos y deals',                    cat: 'CRM' },
+  { id: 'klaviyo',          name: 'Klaviyo',              desc: 'Email marketing automation',                cat: 'Email' },
 ]
 
 const TEMPLATES_DATA = [
-  { id: 1, title: 'Google & Meta Ads Monthly Report',  apps: ['google_ads','meta','google_slides'],  tag: 'Reporting',    desc: 'Consolidated monthly report with AI insights.' },
-  { id: 2, title: 'Meta Ads Bulk Uploader',            apps: ['meta','google_sheets'],               tag: 'Ad Creative',  desc: 'Create dozens of Meta ads from a single Sheet.' },
-  { id: 3, title: 'Google Ads Audit Checklist',        apps: ['google_ads','google_sheets'],         tag: 'Audit',        desc: 'Full account audit with 40+ automated checks.' },
-  { id: 4, title: 'Competitor Ads Spy',                apps: ['meta','tiktok','linkedin'],           tag: 'Ad Creative',  desc: 'Export competitor ads into Google Sheets.' },
-  { id: 5, title: 'Cross-Channel PPC Report',          apps: ['meta','google_ads','tiktok'],         tag: 'Reporting',    desc: 'Blended KPIs and AI insights across channels.' },
-  { id: 6, title: 'Meta Ads Audit Checklist',          apps: ['meta','google_sheets'],               tag: 'Audit',        desc: 'Full Meta audit with 100+ data points.' },
-  { id: 7, title: 'Shopify Daily Sales Report',        apps: ['shopify','google_sheets'],            tag: 'Reporting',    desc: 'Daily sales insights delivered every morning.' },
-  { id: 8, title: 'GA4 Analytics Audit',               apps: ['google_analytics','google_sheets'],   tag: 'Audit',        desc: 'Spot misconfigurations and data gaps fast.' },
-  { id: 9, title: 'Meta to BigQuery Pipeline',         apps: ['meta','bigquery'],                    tag: 'Data',         desc: 'Sync Meta data into BigQuery daily.' },
+  { id: 1, title: 'Informe mensual Google + Meta',   apps: ['google_ads','meta','google_slides'],  tag: 'Reportes',     desc: 'Informe consolidado con insights de IA.' },
+  { id: 2, title: 'Carga masiva de anuncios Meta',   apps: ['meta','google_sheets'],               tag: 'Creatividad',  desc: 'Crea decenas de anuncios desde un Sheet.' },
+  { id: 3, title: 'Auditoría completa Google Ads',   apps: ['google_ads','google_sheets'],         tag: 'Auditoría',    desc: 'Auditoría con 40+ chequeos automáticos.' },
+  { id: 4, title: 'Espía de anuncios competencia',   apps: ['meta','tiktok','linkedin'],           tag: 'Creatividad',  desc: 'Exporta anuncios de competidores.' },
+  { id: 5, title: 'Reporte cross-channel PPC',       apps: ['meta','google_ads','tiktok'],         tag: 'Reportes',     desc: 'KPIs unificados con IA en un solo dashboard.' },
+  { id: 6, title: 'Auditoría completa Meta Ads',     apps: ['meta','google_sheets'],               tag: 'Auditoría',    desc: 'Auditoría Meta con 100+ datapoints.' },
+  { id: 7, title: 'Reporte diario Shopify',          apps: ['shopify','google_sheets'],            tag: 'Reportes',     desc: 'Insights de ventas cada mañana.' },
+  { id: 8, title: 'Auditoría GA4 Analytics',         apps: ['google_analytics','google_sheets'],   tag: 'Auditoría',    desc: 'Detecta gaps y errores de tracking.' },
+  { id: 9, title: 'Pipeline Meta a BigQuery',        apps: ['meta','bigquery'],                    tag: 'Datos',        desc: 'Sincroniza datos de Meta diariamente.' },
 ]
 
 const TAG_C: Record<string, { bg: string; color: string }> = {
-  'Reporting':   { bg: '#EFF6FF', color: '#2563EB' },
-  'Ad Creative': { bg: '#FDF4FF', color: '#9333EA' },
-  'Audit':       { bg: '#ECFDF5', color: '#10B981' },
-  'Data':        { bg: '#FFF7ED', color: '#EA580C' },
+  'Reportes':     { bg: '#EFF6FF', color: '#2563EB' },
+  'Creatividad':  { bg: '#FDF4FF', color: '#9333EA' },
+  'Auditoría':    { bg: '#ECFDF5', color: '#10B981' },
+  'Datos':        { bg: '#FFF7ED', color: '#EA580C' },
 }
 
 const PLANS = [
-  { name: 'Starter', price: 49, priceA: 39,  desc: 'For freelancers and solo marketers',         popular: false,
-    features: ['1,500 AI credits/month','1 user','3 ad accounts','Standard support','7-day history'] },
-  { name: 'Growth',  price: 99, priceA: 79,  desc: 'For small businesses and agencies',          popular: true,
-    features: ['10,000 AI credits/month','Up to 5 users','Unlimited ad accounts','Priority support','30-day history','Custom workflows','Early access'] },
-  { name: 'Agency',  price: 249, priceA: 199, desc: 'For agencies managing multiple clients',     popular: false,
-    features: ['50,000 AI credits/month','Unlimited users','Unlimited ad accounts','Dedicated support','90-day history','White-label reports','API access'] },
+  { name: 'Starter', price: 49,  priceA: 39,  desc: 'Para freelancers y marketers solo',       popular: false,
+    features: ['1.500 créditos IA/mes','1 usuario','3 cuentas publicitarias','Soporte estándar','Historial de 7 días'] },
+  { name: 'Growth',  price: 99,  priceA: 79,  desc: 'Para PYMES y agencias pequeñas',           popular: true,
+    features: ['10.000 créditos IA/mes','Hasta 5 usuarios','Cuentas ilimitadas','Soporte prioritario','Historial de 30 días','Workflows personalizados','Acceso anticipado'] },
+  { name: 'Agency',  price: 249, priceA: 199, desc: 'Para agencias con múltiples clientes',     popular: false,
+    features: ['50.000 créditos IA/mes','Usuarios ilimitados','Cuentas ilimitadas','Soporte dedicado','Historial de 90 días','Reportes white-label','Acceso a API'] },
 ]
 
 export default function Home() {
@@ -141,32 +143,37 @@ function Nav({ onCTA }: { onCTA: () => void }) {
         </span>
       </div>
       <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-        {[['Agent','#agent'],['Connections','#connections'],['Templates','#templates'],['Pricing','#pricing']].map(([l,h])=>(
+        {[['Agente','#agent'],['Conexiones','#connections'],['Templates','#templates'],['Precios','#pricing']].map(([l,h])=>(
           <a key={l} href={h} style={{ fontSize: 14, color: C.inkMid, textDecoration: 'none', fontWeight: 500 }}>{l}</a>
         ))}
       </div>
       <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
-        <a href="#login" style={{ fontSize: 14, color: C.inkMid, textDecoration: 'none' }}>Log in</a>
-        <button onClick={onCTA} style={{ background: C.blue, border: 'none', borderRadius: 8, padding: '8px 18px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: `0 2px 8px ${C.blueGlow}` }}>Get started free</button>
+        <a href="#login" style={{ fontSize: 14, color: C.inkMid, textDecoration: 'none' }}>Iniciar sesión</a>
+        <button onClick={onCTA} style={{ background: C.blue, border: 'none', borderRadius: 8, padding: '8px 18px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: `0 2px 8px ${C.blueGlow}` }}>Empezar gratis</button>
       </div>
     </nav>
   )
 }
 
-/* ─── Hero ─────────────────────────────────────── */
+/* ─── Hero CON CHAT IA FUNCIONAL ───────────────────── */
 function Hero({ onCTA }: { onCTA: () => void }) {
   const [input, setInput] = useState('')
   const [tIdx, setTIdx] = useState(0)
   const [tText, setTText] = useState('')
   const [typing, setTyping] = useState(true)
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([])
+  const [loading, setLoading] = useState(false)
+
   const TIPS = [
-    'Crea una campaña de Google Search para mi tienda...',
-    'Analiza mis Meta Ads de los últimos 30 días...',
+    'Crea una campaña de Google Search para mi tienda online de ropa...',
+    'Analiza el ROAS de mis Meta Ads en los últimos 30 días...',
     'Pausa campañas con ROAS por debajo de 2x automáticamente...',
-    'Crea un informe mensual en Google Slides...',
+    'Crea un informe mensual en Google Slides con KPIs...',
   ]
 
+  // Animación typewriter (solo cuando no hay mensajes)
   useEffect(() => {
+    if (messages.length > 0) return
     const t = TIPS[tIdx % TIPS.length]
     let i = 0
     setTText('')
@@ -176,7 +183,34 @@ function Hero({ onCTA }: { onCTA: () => void }) {
       else { clearInterval(iv); setTyping(false); setTimeout(() => setTIdx(x => x+1), 2600) }
     }, 36)
     return () => clearInterval(iv)
-  }, [tIdx])
+  }, [tIdx, messages.length])
+
+  // Enviar mensaje al backend
+  const sendMessage = async (text: string) => {
+    const message = (text || input).trim()
+    if (!message || loading) return
+
+    setMessages(prev => [...prev, { role: 'user', content: message }])
+    setInput('')
+    setLoading(true)
+
+    try {
+      const res = await fetch(`${API_URL}/api/ai/chat-public`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      })
+
+      if (!res.ok) throw new Error('Error del servidor')
+      const data = await res.json()
+
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error. Inténtalo de nuevo en un momento.' }])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <section style={{
@@ -187,7 +221,7 @@ function Hero({ onCTA }: { onCTA: () => void }) {
     }}>
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: C.blueLight, border: `1px solid ${C.blueMid}`, borderRadius: 99, padding: '5px 14px', marginBottom: 22 }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.blue, display: 'inline-block' }}/>
-        <span style={{ fontSize: 12, color: C.blue, fontWeight: 700, letterSpacing: '0.05em' }}>AI MARKETING AUTOMATION FOR PYMES</span>
+        <span style={{ fontSize: 12, color: C.blue, fontWeight: 700, letterSpacing: '0.05em' }}>AGENTE IA DE MARKETING PARA PYMES</span>
       </div>
       <h1 style={{ fontSize: 'clamp(34px,5.5vw,66px)', fontWeight: 800, color: C.ink, textAlign: 'center', lineHeight: 1.1, letterSpacing: '-0.04em', maxWidth: 800, marginBottom: 14 }}>
         ¿En qué <span style={{ color: C.blue }}>campaña</span> trabajamos hoy?
@@ -196,27 +230,78 @@ function Hero({ onCTA }: { onCTA: () => void }) {
         Tu Agente de Marketing IA que crea, analiza y optimiza tus campañas en Google Ads, Meta Ads, TikTok y más.
       </p>
 
+      {/* Caja de chat */}
       <div style={{ width: '100%', maxWidth: 720, background: C.white, borderRadius: 20, border: `1.5px solid ${C.border}`, boxShadow: C.shadowLg, overflow: 'hidden', marginBottom: 14 }}>
-        <div style={{ padding: '16px 20px', position: 'relative', minHeight: 100 }}>
-          <div style={{ position: 'absolute', top: 16, left: 20, fontSize: 15, color: C.inkLight, pointerEvents: 'none', maxWidth: '85%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {tText}{typing && <span style={{ borderRight: `2px solid ${C.blue}`, animation: 'blink 1s step-end infinite' }}>&nbsp;</span>}
+
+        {/* Mensajes (si los hay) */}
+        {messages.length > 0 && (
+          <div style={{ maxHeight: 360, overflowY: 'auto', padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+            {messages.map((m, i) => (
+              <div key={i} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{ fontSize: 11, color: C.inkLight, fontWeight: 600, marginBottom: 4 }}>
+                  {m.role === 'user' ? 'Tú' : 'Growlia AI'}
+                </div>
+                <div style={{
+                  maxWidth: '85%',
+                  background: m.role === 'user' ? C.blueLight : C.bg,
+                  border: `1px solid ${m.role === 'user' ? C.blueMid : C.border}`,
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  fontSize: 14,
+                  color: C.ink,
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: 11, color: C.inkLight, fontWeight: 600, marginBottom: 4 }}>Growlia AI</div>
+                <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', display: 'flex', gap: 4 }}>
+                  {[0, 0.2, 0.4].map(d => (
+                    <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: C.inkLight, animation: `pulse 1.4s ${d}s infinite` }}/>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onCTA() } }}
-            style={{ width: '100%', minHeight: 70, resize: 'none', border: 'none', outline: 'none', fontSize: 15, color: C.ink, background: 'transparent', fontFamily: 'inherit', paddingRight: 52 }}/>
-          <button onClick={onCTA} style={{ position: 'absolute', right: 16, bottom: 16, width: 38, height: 38, borderRadius: '50%', background: C.blue, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        )}
+
+        {/* Input */}
+        <div style={{ padding: '16px 20px', position: 'relative', minHeight: 100 }}>
+          {messages.length === 0 && !input && (
+            <div style={{ position: 'absolute', top: 16, left: 20, fontSize: 15, color: C.inkLight, pointerEvents: 'none', maxWidth: '85%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {tText}{typing && <span style={{ borderRight: `2px solid ${C.blue}`, animation: 'blink 1s step-end infinite' }}>&nbsp;</span>}
+            </div>
+          )}
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage('') } }}
+            placeholder={messages.length > 0 ? 'Escribe otra pregunta...' : ''}
+            style={{ width: '100%', minHeight: 70, resize: 'none', border: 'none', outline: 'none', fontSize: 15, color: C.ink, background: 'transparent', fontFamily: 'inherit', paddingRight: 52 }}
+          />
+          <button onClick={() => sendMessage('')} disabled={loading} style={{ position: 'absolute', right: 16, bottom: 16, width: 38, height: 38, borderRadius: '50%', background: loading ? C.inkLight : C.blue, border: 'none', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {loading ? (
+              <div style={{ width: 14, height: 14, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            )}
           </button>
         </div>
       </div>
 
+      {/* Prompts rápidos */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 52 }}>
         {[
-          { id: 'google_ads', label: 'Crear campaña Google' },
-          { id: 'meta', label: 'Analizar Meta Ads' },
-          { id: 'tiktok', label: 'Optimizar TikTok' },
-          { id: 'google_ads', label: 'Generar informe' },
+          { id: 'google_ads', label: 'Crear campaña Google', prompt: 'Quiero crear una campaña de Google Ads para vender zapatillas online. Recomiéndame estructura y presupuesto inicial.' },
+          { id: 'meta', label: 'Analizar Meta Ads', prompt: 'Mi ROAS en Meta Ads bajó del 4x al 2x este mes. ¿Qué pasos sigo para diagnosticar el problema?' },
+          { id: 'tiktok', label: 'Optimizar TikTok', prompt: '¿Cómo optimizo TikTok Ads para conversiones? Mi CPA está muy alto.' },
+          { id: 'google_ads', label: 'Generar informe', prompt: 'Cómo estructurarías un informe mensual de performance de paid media para presentar al cliente.' },
         ].map(q => (
-          <button key={q.label} onClick={onCTA} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.white, border: `1px solid ${C.border}`, borderRadius: 99, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: C.inkMid, cursor: 'pointer' }}>
+          <button key={q.label} onClick={() => sendMessage(q.prompt)} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.white, border: `1px solid ${C.border}`, borderRadius: 99, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: C.inkMid, cursor: loading ? 'wait' : 'pointer' }}>
             <Logo id={q.id} size={16}/>
             {q.label}
           </button>
@@ -233,7 +318,7 @@ function Hero({ onCTA }: { onCTA: () => void }) {
           <div style={{ display: 'flex', gap: 1 }}>
             {[1,2,3,4,5].map(s => <svg key={s} width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
           </div>
-          <p style={{ fontSize: 12, color: C.inkMid }}>+2,400 marketers escalando con IA</p>
+          <p style={{ fontSize: 12, color: C.inkMid }}>+2.400 marketers escalando con IA</p>
         </div>
       </div>
     </section>
@@ -258,12 +343,12 @@ function LogoStrip() {
 
 /* ─── Section Connections ───────────────────────── */
 function SectionConnections({ onConnect }: { onConnect: () => void }) {
-  const cats = ['Ads','Analytics','Productivity','eCommerce','Data','CRM','Email']
+  const cats = ['Anuncios','Analítica','Productividad','eCommerce','Datos','CRM','Email']
   return (
     <section id="connections" style={{ padding: '80px 5vw', background: C.white }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>CONEXIONES</p>
       <h2 style={{ fontSize: 'clamp(26px,3.5vw,44px)', fontWeight: 800, color: C.ink, textAlign: 'center', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 14 }}>Conecta tu stack de marketing</h2>
-      <p style={{ fontSize: 15, color: C.inkMid, textAlign: 'center', maxWidth: 520, margin: '0 auto 48px', lineHeight: 1.7 }}>Una sola plataforma para todas tus cuentas. Conexión en segundos con OAuth — sin contraseñas, sin complicaciones.</p>
+      <p style={{ fontSize: 15, color: C.inkMid, textAlign: 'center', maxWidth: 520, margin: '0 auto 48px', lineHeight: 1.7 }}>Una plataforma para todas tus cuentas. Conexión en segundos con OAuth — sin contraseñas, sin complicaciones.</p>
 
       <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
         {cats.map(cat => {
@@ -283,7 +368,7 @@ function SectionConnections({ onConnect }: { onConnect: () => void }) {
                       <div style={{ fontSize: 12, color: C.inkMid }}>{conn.desc}</div>
                     </div>
                     <button onClick={onConnect} style={{ display: 'flex', alignItems: 'center', gap: 5, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, color: C.ink, cursor: 'pointer' }}>
-                      <span style={{ fontSize: 16 }}>+</span>Connect
+                      <span style={{ fontSize: 16 }}>+</span>Conectar
                     </button>
                   </div>
                 ))}
@@ -299,7 +384,7 @@ function SectionConnections({ onConnect }: { onConnect: () => void }) {
 /* ─── Stats ──────────────────────────────────── */
 function SectionStats() {
   const stats = [
-    { v: '+2,400', l: 'Marketers usando Growlia' },
+    { v: '+2.400', l: 'Marketers usando Growlia' },
     { v: '300+', l: 'Operaciones de marketing' },
     { v: '4.1×', l: 'Mejora media de ROAS' },
     { v: '< 2min', l: 'Tiempo de configuración' },
@@ -322,9 +407,9 @@ function SectionStats() {
 function SectionTemplates() {
   return (
     <section id="templates" style={{ padding: '80px 5vw', backgroundImage: `radial-gradient(${C.borderHov} 1px, transparent 1px)`, backgroundSize: '24px 24px', background: C.bgDot }}>
-      <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>WORKFLOWS & TEMPLATES</p>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>WORKFLOWS Y TEMPLATES</p>
       <h2 style={{ fontSize: 'clamp(26px,3.5vw,44px)', fontWeight: 800, color: C.ink, textAlign: 'center', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 14 }}>
-        Marketing <span style={{ color: C.blue }}>Workflow Templates</span>
+        <span style={{ color: C.blue }}>Templates</span> de marketing automation
       </h2>
       <p style={{ fontSize: 15, color: C.inkMid, textAlign: 'center', maxWidth: 520, margin: '0 auto 48px', lineHeight: 1.7 }}>Automatizaciones pre-construidas listas para ejecutar en minutos. Sin código.</p>
 
@@ -428,7 +513,7 @@ function Footer() {
             Grow<span style={{ color: C.blue }}>lia</span>
           </span>
         </div>
-        <p style={{ fontSize: 13, color: C.inkMid, lineHeight: 1.7, maxWidth: 320, margin: '0 auto' }}>Construye automatizaciones de marketing con IA y ejecuta tareas con agentes inteligentes.</p>
+        <p style={{ fontSize: 13, color: C.inkMid, lineHeight: 1.7, maxWidth: 320, margin: '0 auto' }}>Automatizaciones de marketing con IA y agentes inteligentes para PYMES y agencias.</p>
       </div>
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 20, textAlign: 'center', maxWidth: 1100, margin: '0 auto' }}>
         <p style={{ fontSize: 12, color: C.inkLight }}>Hecho con ❤️ por marketers, para marketers. © 2025 Growlia.</p>
@@ -457,21 +542,20 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
           {step === 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ textAlign: 'center', marginBottom: 4 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginBottom: 4 }}>Crea tu cuenta</h3>
-                <p style={{ fontSize: 13, color: C.inkMid }}>14 días gratis, sin tarjeta de crédito</p>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginBottom: 4 }}>Únete a la lista de espera</h3>
+                <p style={{ fontSize: 13, color: C.inkMid }}>Te avisaremos en cuanto Growlia esté disponible</p>
               </div>
               {[
                 { k: 'nombre', l: 'Tu nombre', ph: 'María García' },
                 { k: 'email', l: 'Email', ph: 'maria@empresa.com' },
-                { k: 'password', l: 'Contraseña', ph: 'Mín. 8 caracteres', t: 'password' },
               ].map(f => (
                 <div key={f.k}>
                   <label style={{ fontSize: 12, fontWeight: 700, color: C.inkMid, display: 'block', marginBottom: 5 }}>{f.l}</label>
-                  <input type={f.t || 'text'} placeholder={f.ph} value={(form as any)[f.k]} onChange={e => setForm(p => ({ ...p, [f.k]: e.target.value }))}
+                  <input type='text' placeholder={f.ph} value={(form as any)[f.k]} onChange={e => setForm(p => ({ ...p, [f.k]: e.target.value }))}
                     style={{ width: '100%', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', fontSize: 14, color: C.ink, background: C.bg, outline: 'none', boxSizing: 'border-box' }}/>
                 </div>
               ))}
-              <button onClick={() => { if (form.email && form.nombre) setStep(2) }} style={{ background: C.blue, border: 'none', borderRadius: 12, padding: '12px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: form.email && form.nombre ? 1 : 0.5, marginTop: 4 }}>Crear cuenta →</button>
+              <button onClick={() => { if (form.email && form.nombre) setStep(2) }} style={{ background: C.blue, border: 'none', borderRadius: 12, padding: '12px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: form.email && form.nombre ? 1 : 0.5, marginTop: 4 }}>Apuntarme →</button>
             </div>
           )}
           {step === 2 && (
@@ -479,11 +563,8 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
               <div style={{ fontSize: 52 }}>🎉</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: C.ink }}>¡Bienvenido a Growlia!</h3>
               <p style={{ fontSize: 14, color: C.inkMid, lineHeight: 1.6 }}>
-                Tu cuenta está creada. Pronto podrás conectar tus plataformas publicitarias y empezar a automatizar.
+                Te hemos añadido a la lista. Recibirás un email en cuanto puedas conectar tus cuentas reales de Meta y Google Ads.
               </p>
-              <div style={{ width: '100%', background: C.blueLight, border: `1px solid ${C.blueMid}`, borderRadius: 12, padding: '14px', fontSize: 13, color: C.blue, fontWeight: 600 }}>
-                Próximamente: integración con Meta Ads y Google Ads
-              </div>
               <button onClick={onClose} style={{ background: C.blue, border: 'none', borderRadius: 12, padding: '12px 32px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%' }}>Entendido</button>
             </div>
           )}
