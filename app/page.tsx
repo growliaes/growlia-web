@@ -1,4 +1,5 @@
-import ChatBox from './components/ChatBox'
+import dynamic from 'next/dynamic'
+const ChatBox = dynamic(() => import('./components/ChatBox'), { ssr: false })
 
 const C = {
   blue: '#2563EB', ink: '#111827', inkMid: '#6B7280',
