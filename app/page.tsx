@@ -1,267 +1,354 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.growlia.es'
 
-const PLATFORMS = [
-  {
-    id: 'google',
-    name: 'Google Ads',
-    desc: 'Gestiona campañas de Google Ads',
-    color: '#4285F4',
-    oauthUrl: `${API_URL}/api/auth/google`,
-    logo: (
-      <svg width="24" height="24" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'meta',
-    name: 'Meta Ads',
-    desc: 'Anuncios en Facebook e Instagram',
-    color: '#0866FF',
-    oauthUrl: `${API_URL}/api/auth/meta`,
-    logo: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="#0866FF">
-        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'tiktok',
-    name: 'TikTok Ads',
-    desc: 'Gestiona campañas en TikTok',
-    color: '#000000',
-    oauthUrl: null,
-    logo: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="black">
-        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.56V6.79a4.85 4.85 0 01-1.07-.1z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'linkedin',
-    name: 'LinkedIn Ads',
-    desc: 'Anuncios B2B en LinkedIn',
-    color: '#0A66C2',
-    oauthUrl: null,
-    logo: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="#0A66C2">
-        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'microsoft',
-    name: 'Microsoft Ads',
-    desc: 'Campañas en Bing y Microsoft',
-    color: '#00A4EF',
-    oauthUrl: null,
-    logo: (
-      <svg width="24" height="24" viewBox="0 0 24 24">
-        <path fill="#F25022" d="M1 1h10v10H1z"/>
-        <path fill="#00A4EF" d="M13 1h10v10H13z"/>
-        <path fill="#7FBA00" d="M1 13h10v10H1z"/>
-        <path fill="#FFB900" d="M13 13h10v10H13z"/>
-      </svg>
-    ),
-  },
-]
-
-interface Connection {
-  id: string
-  platform: string
-  account_name: string
-  ad_account_id: string
-  created_at: string
+const C = {
+  blue: '#2563EB',
+  blueDark: '#1D4ED8',
+  blueLight: '#EFF6FF',
+  ink: '#111827',
+  inkMid: '#6B7280',
+  inkLight: '#9CA3AF',
+  border: '#E5E7EB',
+  white: '#FFFFFF',
+  bg: '#F9FAFB',
 }
 
-export default function ConnectionsPage() {
-  const supabase = createClientComponentClient()
-  const router = useRouter()
-  const [connections, setConnections] = useState<Connection[]>([])
-  const [loading, setLoading] = useState(true)
-  const [disconnecting, setDisconnecting] = useState<string | null>(null)
+/* ─── Navbar ─────────────────────────────────────── */
+function Navbar({ onLogin }: { onLogin: () => void }) {
+  return (
+    <nav style={{
+      position: 'sticky', top: 0, zIndex: 100,
+      background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)',
+      borderBottom: `1px solid ${C.border}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 5vw', height: 64,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 32, height: 32, background: C.blue, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" fill="none"/>
+            <circle cx="8" cy="8" r="2" fill="white"/>
+          </svg>
+        </div>
+        <span style={{ fontWeight: 800, fontSize: 20, color: C.ink, letterSpacing: '-0.02em' }}>Growlia</span>
+      </div>
+      <div style={{ display: 'flex', gap: 32 }}>
+        {[['Agente', '#agente'], ['Conexiones', '#connections'], ['Templates', '#templates'], ['Precios', '#precios']].map(([label, href]) => (
+          <a key={label} href={href} style={{ fontSize: 14, color: C.inkMid, textDecoration: 'none', fontWeight: 500 }}>{label}</a>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <button onClick={onLogin} style={{ background: 'none', border: 'none', fontSize: 14, color: C.inkMid, cursor: 'pointer', fontWeight: 500 }}>
+          Iniciar sesión
+        </button>
+        <button onClick={onLogin} style={{ background: C.blue, border: 'none', borderRadius: 8, padding: '8px 20px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+          Empezar gratis
+        </button>
+      </div>
+    </nav>
+  )
+}
+
+/* ─── Chat Box ───────────────────────────────────── */
+interface Msg { role: 'user' | 'ai'; text: string }
+
+function ChatBox() {
+  const [msgs, setMsgs] = useState<Msg[]>([
+    { role: 'ai', text: '¡Hola! Soy Growlia, tu agente de marketing con IA. ¿En qué campaña trabajamos hoy?' }
+  ])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    checkAuth()
-    fetchConnections()
-    checkUrlParams()
-  }, [])
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [msgs])
 
-  async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/auth')
+  async function send() {
+    const text = input.trim()
+    if (!text || loading) return
+    setInput('')
+    setMsgs(m => [...m, { role: 'user', text }])
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/ai/chat-public`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      })
+      const data = await res.json()
+      setMsgs(m => [...m, { role: 'ai', text: data.response || 'Error al procesar tu consulta.' }])
+    } catch {
+      setMsgs(m => [...m, { role: 'ai', text: 'No puedo conectar con el servidor ahora mismo.' }])
     }
-  }
-
-  async function fetchConnections() {
-    const { data, error } = await supabase
-      .from('connections')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (!error && data) setConnections(data)
     setLoading(false)
   }
 
-  function checkUrlParams() {
-    const params = new URLSearchParams(window.location.search)
-    const connected = params.get('connected')
-    const error = params.get('error')
-    if (connected) {
-      fetchConnections()
-      window.history.replaceState({}, '', '/connections')
-    }
-    if (error) {
-      console.error('OAuth error:', error)
-    }
-  }
-
-  async function handleConnect(platform: typeof PLATFORMS[0]) {
-    if (!platform.oauthUrl) {
-      alert(`${platform.name} estará disponible próximamente.`)
-      return
-    }
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/auth')
-      return
-    }
-    window.location.href = platform.oauthUrl
-  }
-
-  async function handleDisconnect(connectionId: string, platformId: string) {
-    if (!confirm('¿Desconectar esta cuenta?')) return
-    setDisconnecting(platformId)
-    await supabase.from('connections').delete().eq('id', connectionId)
-    await fetchConnections()
-    setDisconnecting(null)
-  }
-
-  const isConnected = (platformId: string) =>
-    connections.find(c => c.platform === platformId)
-
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FC', fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #E8EAF0', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 32, height: 32, background: '#2563EB', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" fill="none"/>
-              <circle cx="8" cy="8" r="2" fill="white"/>
-            </svg>
-          </div>
-          <span style={{ fontWeight: 700, fontSize: 18, color: '#111827' }}>Growlia</span>
-        </div>
-        <nav style={{ display: 'flex', gap: 32 }}>
-          {['Agente', 'Conexiones', 'Templates', 'Precios'].map(item => (
-            <a key={item} href={item === 'Conexiones' ? '/connections' : `/${item.toLowerCase()}`}
-              style={{ fontSize: 14, color: item === 'Conexiones' ? '#2563EB' : '#6B7280', textDecoration: 'none', fontWeight: item === 'Conexiones' ? 600 : 400 }}>
-              {item}
-            </a>
-          ))}
-        </nav>
-        <button onClick={() => router.push('/auth')}
-          style={{ padding: '8px 20px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-          Dashboard
-        </button>
+    <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', overflow: 'hidden', maxWidth: 580, width: '100%' }}>
+      <div style={{ background: C.blue, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80' }} />
+        <span style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>Growlia — Agente IA</span>
       </div>
-
-      {/* Content */}
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '60px 24px' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: '#2563EB', letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>CONEXIONES</p>
-        <h1 style={{ fontSize: 40, fontWeight: 800, color: '#111827', textAlign: 'center', marginBottom: 16, letterSpacing: '-0.02em' }}>
-          Conecta tu stack de marketing
-        </h1>
-        <p style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', marginBottom: 48, lineHeight: 1.7 }}>
-          Una plataforma para todas tus cuentas. Conexión en segundos con OAuth — sin contraseñas, sin complicaciones.
-        </p>
-
-        {/* Platforms list */}
-        <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #E8EAF0', overflow: 'hidden' }}>
-          <div style={{ padding: '12px 24px', background: '#F8F9FC', borderBottom: '1px solid #E8EAF0' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.1em' }}>ANUNCIOS</span>
+      <div style={{ height: 260, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {msgs.map((m, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth: '80%', padding: '10px 14px', borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+              background: m.role === 'user' ? C.blue : C.bg,
+              color: m.role === 'user' ? '#fff' : C.ink,
+              fontSize: 13, lineHeight: 1.6,
+            }}>
+              {m.text}
+            </div>
           </div>
-
-          {PLATFORMS.map((platform, i) => {
-            const conn = isConnected(platform.id)
-            return (
-              <div key={platform.id} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '20px 24px',
-                borderBottom: i < PLATFORMS.length - 1 ? '1px solid #F3F4F6' : 'none',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, border: '1px solid #E8EAF0', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
-                    {platform.logo}
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <p style={{ fontWeight: 600, fontSize: 15, color: '#111827', margin: 0 }}>{platform.name}</p>
-                      {conn && (
-                        <span style={{ fontSize: 11, background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
-                          ✓ Conectado
-                        </span>
-                      )}
-                      {!platform.oauthUrl && !conn && (
-                        <span style={{ fontSize: 11, background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
-                          Próximamente
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ fontSize: 13, color: '#9CA3AF', margin: '2px 0 0' }}>
-                      {conn ? conn.account_name || conn.ad_account_id : platform.desc}
-                    </p>
-                  </div>
-                </div>
-
-                {conn ? (
-                  <button
-                    onClick={() => handleDisconnect(conn.id, platform.id)}
-                    disabled={disconnecting === platform.id}
-                    style={{ padding: '8px 16px', background: '#fff', color: '#EF4444', border: '1px solid #FCA5A5', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                    {disconnecting === platform.id ? 'Desconectando...' : 'Desconectar'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleConnect(platform)}
-                    style={{
-                      padding: '8px 20px',
-                      background: platform.oauthUrl ? '#fff' : '#F9FAFB',
-                      color: platform.oauthUrl ? '#111827' : '#9CA3AF',
-                      border: `1px solid ${platform.oauthUrl ? '#E8EAF0' : '#E8EAF0'}`,
-                      borderRadius: 8, fontSize: 13, fontWeight: 600,
-                      cursor: platform.oauthUrl ? 'pointer' : 'not-allowed',
-                    }}>
-                    {platform.oauthUrl ? '+ Conectar' : 'Próximamente'}
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Status */}
-        {!loading && connections.length > 0 && (
-          <div style={{ marginTop: 24, padding: 20, background: '#EFF6FF', borderRadius: 12, border: '1px solid #BFDBFE' }}>
-            <p style={{ margin: 0, fontSize: 14, color: '#1D4ED8', fontWeight: 600 }}>
-              ✓ {connections.length} cuenta{connections.length > 1 ? 's' : ''} conectada{connections.length > 1 ? 's' : ''}
-            </p>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#3B82F6' }}>
-              Ve al <a href="/dashboard" style={{ color: '#2563EB', fontWeight: 600 }}>dashboard</a> para ver tus campañas.
-            </p>
+        ))}
+        {loading && (
+          <div style={{ display: 'flex', gap: 4, padding: '10px 14px' }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: C.inkLight, animation: `bounce 1s ${i*0.15}s infinite` }} />
+            ))}
           </div>
         )}
+        <div ref={bottomRef} />
+      </div>
+      <div style={{ borderTop: `1px solid ${C.border}`, display: 'flex', padding: 12, gap: 8 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && send()}
+          placeholder="¿En qué campaña trabajamos hoy?"
+          style={{ flex: 1, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+        />
+        <button onClick={send} disabled={loading}
+          style={{ background: C.blue, border: 'none', borderRadius: 8, padding: '10px 16px', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+          →
+        </button>
       </div>
     </div>
+  )
+}
+
+/* ─── Hero ───────────────────────────────────────── */
+function SectionHero({ onCta }: { onCta: () => void }) {
+  return (
+    <section id="agente" style={{ padding: '80px 5vw 60px', background: C.white }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 60, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 300 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: C.blueLight, borderRadius: 20, padding: '6px 14px', marginBottom: 24 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: C.blue }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.05em' }}>AGENTE IA PARA MARKETING</span>
+          </div>
+          <h1 style={{ fontSize: 'clamp(32px,4.5vw,56px)', fontWeight: 800, color: C.ink, lineHeight: 1.1, letterSpacing: '-0.03em', marginBottom: 20 }}>
+            Tu copiloto de<br />
+            <span style={{ color: C.blue }}>marketing digital</span>
+          </h1>
+          <p style={{ fontSize: 17, color: C.inkMid, lineHeight: 1.7, marginBottom: 32, maxWidth: 460 }}>
+            Conecta Google Ads, Meta Ads y TikTok en un solo lugar. La IA optimiza tus campañas, detecta oportunidades y genera informes automáticamente.
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button onClick={onCta} style={{ background: C.blue, border: 'none', borderRadius: 10, padding: '14px 28px', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+              Empezar gratis →
+            </button>
+            <button onClick={() => document.getElementById('connections')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px 28px', color: C.ink, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+              Ver conexiones
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: C.inkLight, marginTop: 12 }}>Sin tarjeta de crédito · Cancela cuando quieras</p>
+        </div>
+        <div style={{ flex: 1, minWidth: 300, display: 'flex', justifyContent: 'center' }}>
+          <ChatBox />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── Connections ────────────────────────────────── */
+const PLATFORMS = [
+  { name: 'Google Ads', desc: 'Gestiona campañas de Google Ads', soon: false },
+  { name: 'Meta Ads', desc: 'Anuncios en Facebook e Instagram', soon: false },
+  { name: 'TikTok Ads', desc: 'Gestiona campañas en TikTok', soon: true },
+  { name: 'LinkedIn Ads', desc: 'Anuncios B2B en LinkedIn', soon: true },
+  { name: 'Microsoft Ads', desc: 'Campañas en Bing y Microsoft', soon: true },
+  { name: 'Google Analytics', desc: 'Analítica web avanzada', soon: true },
+]
+
+function SectionConnections({ onCta }: { onCta: () => void }) {
+  return (
+    <section id="connections" style={{ padding: '80px 5vw', background: C.bg }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>CONEXIONES</p>
+      <h2 style={{ fontSize: 'clamp(26px,3.5vw,44px)', fontWeight: 800, color: C.ink, textAlign: 'center', letterSpacing: '-0.03em', marginBottom: 14 }}>
+        Conecta tu stack de marketing
+      </h2>
+      <p style={{ fontSize: 15, color: C.inkMid, textAlign: 'center', maxWidth: 520, margin: '0 auto 48px', lineHeight: 1.7 }}>
+        Una plataforma para todas tus cuentas. Conexión en segundos con OAuth — sin contraseñas, sin complicaciones.
+      </p>
+      <div style={{ maxWidth: 720, margin: '0 auto', background: C.white, borderRadius: 16, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+        <div style={{ padding: '10px 24px', background: C.bg, borderBottom: `1px solid ${C.border}` }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: C.inkLight, letterSpacing: '0.1em' }}>ANUNCIOS</span>
+        </div>
+        {PLATFORMS.map((p, i) => (
+          <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: i < PLATFORMS.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontWeight: 600, fontSize: 15, color: C.ink }}>{p.name}</span>
+                {p.soon && <span style={{ fontSize: 11, background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Próximamente</span>}
+              </div>
+              <span style={{ fontSize: 13, color: C.inkLight }}>{p.desc}</span>
+            </div>
+            <button onClick={p.soon ? undefined : onCta}
+              style={{ padding: '8px 18px', background: p.soon ? C.bg : C.white, color: p.soon ? C.inkLight : C.ink, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: p.soon ? 'default' : 'pointer' }}>
+              {p.soon ? 'Próximamente' : '+ Conectar'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Features ───────────────────────────────────── */
+function SectionFeatures() {
+  const feats = [
+    { icon: '🤖', title: 'IA que trabaja por ti', desc: 'El agente analiza tus campañas, detecta anomalías y sugiere optimizaciones en tiempo real.' },
+    { icon: '📊', title: 'Dashboard unificado', desc: 'Todas tus métricas de Google Ads y Meta en un solo panel. Sin cambiar de pestaña.' },
+    { icon: '📝', title: 'Reportes automáticos', desc: 'Informes semanales generados por IA listos para enviar a tu cliente o equipo.' },
+    { icon: '🔗', title: 'Conexión sin código', desc: 'OAuth con un click. Sin APIs manuales, sin contraseñas compartidas.' },
+  ]
+  return (
+    <section style={{ padding: '80px 5vw', background: C.white }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>FUNCIONALIDADES</p>
+      <h2 style={{ fontSize: 'clamp(26px,3.5vw,44px)', fontWeight: 800, color: C.ink, textAlign: 'center', letterSpacing: '-0.03em', marginBottom: 48 }}>
+        Todo lo que necesitas, nada más
+      </h2>
+      <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+        {feats.map(f => (
+          <div key={f.title} style={{ padding: 28, background: C.bg, borderRadius: 14, border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 14 }}>{f.icon}</div>
+            <h3 style={{ fontWeight: 700, fontSize: 16, color: C.ink, marginBottom: 8 }}>{f.title}</h3>
+            <p style={{ fontSize: 14, color: C.inkMid, lineHeight: 1.6 }}>{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Pricing ────────────────────────────────────── */
+function SectionPricing({ onCta }: { onCta: () => void }) {
+  const plans = [
+    { name: 'Starter', price: 49, desc: 'Para freelancers y consultores', features: ['2 cuentas de ads', 'Agente IA básico', 'Reportes mensuales', 'Soporte email'] },
+    { name: 'Growth', price: 99, desc: 'Para agencias pequeñas', features: ['10 cuentas de ads', 'Agente IA avanzado', 'Reportes semanales', 'Dashboard multi-cliente', 'Soporte prioritario'], highlight: true },
+    { name: 'Agency', price: 249, desc: 'Para agencias y equipos grandes', features: ['Cuentas ilimitadas', 'Agente IA premium', 'Reportes diarios', 'White-label', 'Onboarding dedicado'] },
+  ]
+  return (
+    <section id="precios" style={{ padding: '80px 5vw', background: C.bg }}>
+      <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>PRECIOS</p>
+      <h2 style={{ fontSize: 'clamp(26px,3.5vw,44px)', fontWeight: 800, color: C.ink, textAlign: 'center', letterSpacing: '-0.03em', marginBottom: 48 }}>
+        Sencillo y transparente
+      </h2>
+      <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+        {plans.map(p => (
+          <div key={p.name} style={{ background: p.highlight ? C.blue : C.white, borderRadius: 16, border: `1px solid ${p.highlight ? C.blue : C.border}`, padding: 28, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <h3 style={{ fontWeight: 700, fontSize: 18, color: p.highlight ? '#fff' : C.ink }}>{p.name}</h3>
+              <p style={{ fontSize: 13, color: p.highlight ? 'rgba(255,255,255,0.7)' : C.inkMid }}>{p.desc}</p>
+            </div>
+            <div>
+              <span style={{ fontSize: 40, fontWeight: 800, color: p.highlight ? '#fff' : C.ink }}>${p.price}</span>
+              <span style={{ fontSize: 14, color: p.highlight ? 'rgba(255,255,255,0.7)' : C.inkMid }}>/mes</span>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {p.features.map(f => (
+                <li key={f} style={{ fontSize: 14, color: p.highlight ? 'rgba(255,255,255,0.9)' : C.inkMid, display: 'flex', gap: 8 }}>
+                  <span style={{ color: p.highlight ? '#fff' : C.blue }}>✓</span> {f}
+                </li>
+              ))}
+            </ul>
+            <button onClick={onCta} style={{ background: p.highlight ? '#fff' : C.blue, border: 'none', borderRadius: 10, padding: '12px', color: p.highlight ? C.blue : '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginTop: 'auto' }}>
+              Empezar gratis
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Footer ─────────────────────────────────────── */
+function Footer() {
+  return (
+    <footer style={{ background: C.ink, padding: '40px 5vw', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 28, height: 28, background: C.blue, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" fill="none"/>
+            <circle cx="8" cy="8" r="2" fill="white"/>
+          </svg>
+        </div>
+        <span style={{ fontWeight: 700, color: '#fff', fontSize: 16 }}>Growlia</span>
+      </div>
+      <div style={{ display: 'flex', gap: 24 }}>
+        {[['Privacidad', '/privacidad'], ['Términos', '/terminos']].map(([label, href]) => (
+          <a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>{label}</a>
+        ))}
+      </div>
+      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>© 2025 Growlia</span>
+    </footer>
+  )
+}
+
+/* ─── Modal Auth ─────────────────────────────────── */
+function ModalAuth({ onClose }: { onClose: () => void }) {
+  const router = useRouter()
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: C.white, borderRadius: 20, padding: 40, maxWidth: 400, width: '100%', textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, background: C.blue, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" fill="none"/>
+            <circle cx="8" cy="8" r="2" fill="white"/>
+          </svg>
+        </div>
+        <h2 style={{ fontWeight: 800, fontSize: 22, color: C.ink, marginBottom: 8 }}>Empieza con Growlia</h2>
+        <p style={{ fontSize: 14, color: C.inkMid, marginBottom: 28, lineHeight: 1.6 }}>Crea tu cuenta gratuita y conecta tus cuentas de ads en segundos.</p>
+        <button onClick={() => router.push('/auth')}
+          style={{ width: '100%', background: C.blue, border: 'none', borderRadius: 10, padding: '14px', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>
+          Crear cuenta gratis
+        </button>
+        <button onClick={() => router.push('/auth')}
+          style={{ width: '100%', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '14px', color: C.ink, fontWeight: 600, fontSize: 15, cursor: 'pointer', marginBottom: 20 }}>
+          Ya tengo cuenta — Iniciar sesión
+        </button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 13, color: C.inkLight, cursor: 'pointer' }}>Cerrar</button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── App ────────────────────────────────────────── */
+export default function Home() {
+  const [showModal, setShowModal] = useState(false)
+  return (
+    <>
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+      `}</style>
+      <Navbar onLogin={() => setShowModal(true)} />
+      <SectionHero onCta={() => setShowModal(true)} />
+      <SectionFeatures />
+      <SectionConnections onCta={() => setShowModal(true)} />
+      <SectionPricing onCta={() => setShowModal(true)} />
+      <Footer />
+      {showModal && <ModalAuth onClose={() => setShowModal(false)} />}
+    </>
   )
 }
