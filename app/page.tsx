@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.growlia.es'
+const API_URL = 'https://api.growlia.es'
 
 const C = {
   blue: '#2563EB',
@@ -57,12 +57,14 @@ function Navbar({ onLogin }: { onLogin: () => void }) {
 interface Msg { role: 'user' | 'ai'; text: string }
 
 function ChatBox() {
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: 'ai', text: '¡Hola! Soy Growlia, tu agente de marketing con IA. ¿En qué campaña trabajamos hoy?' }
-  ])
+  const [msgs, setMsgs] = useState<Msg[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setMsgs([{ role: 'ai', text: '¡Hola! Soy Growlia, tu agente de marketing con IA. ¿En qué campaña trabajamos hoy?' }])
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
