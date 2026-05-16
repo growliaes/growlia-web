@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 
 /* ═══════════════════════════════════════════════════════════
-   GROWLIA — Landing con Chat IA Funcional
+   GROWLIA — Landing con Chat IA Funcional + OAuth Real
 ═══════════════════════════════════════════════════════════ */
 
-const API_URL = 'https://api.growlia.es'  // ← URL del backend
+const API_URL = 'https://api.growlia.es'
 
 const C = {
   white:     '#FFFFFF',
@@ -117,7 +117,6 @@ export default function Home() {
   )
 }
 
-/* ─── Nav ──────────────────────────────────────── */
 function Nav({ onCTA }: { onCTA: () => void }) {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
@@ -155,7 +154,6 @@ function Nav({ onCTA }: { onCTA: () => void }) {
   )
 }
 
-/* ─── Hero CON CHAT IA FUNCIONAL ───────────────────── */
 function Hero({ onCTA }: { onCTA: () => void }) {
   const [input, setInput] = useState('')
   const [tIdx, setTIdx] = useState(0)
@@ -171,7 +169,6 @@ function Hero({ onCTA }: { onCTA: () => void }) {
     'Crea un informe mensual en Google Slides con KPIs...',
   ]
 
-  // Animación typewriter (solo cuando no hay mensajes)
   useEffect(() => {
     if (messages.length > 0) return
     const t = TIPS[tIdx % TIPS.length]
@@ -185,7 +182,6 @@ function Hero({ onCTA }: { onCTA: () => void }) {
     return () => clearInterval(iv)
   }, [tIdx, messages.length])
 
-  // Enviar mensaje al backend
   const sendMessage = async (text: string) => {
     const message = (text || input).trim()
     if (!message || loading) return
@@ -230,10 +226,8 @@ function Hero({ onCTA }: { onCTA: () => void }) {
         Tu Agente de Marketing IA que crea, analiza y optimiza tus campañas en Google Ads, Meta Ads, TikTok y más.
       </p>
 
-      {/* Caja de chat */}
       <div style={{ width: '100%', maxWidth: 720, background: C.white, borderRadius: 20, border: `1.5px solid ${C.border}`, boxShadow: C.shadowLg, overflow: 'hidden', marginBottom: 14 }}>
 
-        {/* Mensajes (si los hay) */}
         {messages.length > 0 && (
           <div style={{ maxHeight: 360, overflowY: 'auto', padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
             {messages.map((m, i) => (
@@ -269,7 +263,6 @@ function Hero({ onCTA }: { onCTA: () => void }) {
           </div>
         )}
 
-        {/* Input */}
         <div style={{ padding: '16px 20px', position: 'relative', minHeight: 100 }}>
           {messages.length === 0 && !input && (
             <div style={{ position: 'absolute', top: 16, left: 20, fontSize: 15, color: C.inkLight, pointerEvents: 'none', maxWidth: '85%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -293,7 +286,6 @@ function Hero({ onCTA }: { onCTA: () => void }) {
         </div>
       </div>
 
-      {/* Prompts rápidos */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 52 }}>
         {[
           { id: 'google_ads', label: 'Crear campaña Google', prompt: 'Quiero crear una campaña de Google Ads para vender zapatillas online. Recomiéndame estructura y presupuesto inicial.' },
@@ -325,7 +317,6 @@ function Hero({ onCTA }: { onCTA: () => void }) {
   )
 }
 
-/* ─── LogoStrip ──────────────────────────────────── */
 function LogoStrip() {
   return (
     <div style={{ background: C.white, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, padding: '24px 5vw' }}>
@@ -341,9 +332,23 @@ function LogoStrip() {
   )
 }
 
-/* ─── Section Connections ───────────────────────── */
 function SectionConnections({ onConnect }: { onConnect: () => void }) {
   const cats = ['Anuncios','Analítica','Productividad','eCommerce','Datos','CRM','Email']
+  
+  const handleGoogleConnect = () => {
+    const clientId = '708427883725-33ql01ep5aa8e6od515er94j7rm7i81m.apps.googleusercontent.com'
+    const redirectUri = encodeURIComponent('https://api.growlia.es/api/auth/google/callback')
+    const scopes = encodeURIComponent('https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`
+  }
+
+  const handleMetaConnect = () => {
+    const appId = '859352396692840'
+    const redirectUri = encodeURIComponent('https://api.growlia.es/api/auth/meta/callback')
+    const scopes = encodeURIComponent('ads_read,ads_management,business_management')
+    window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scopes}&response_type=code&state=demo`
+  }
+
   return (
     <section id="connections" style={{ padding: '80px 5vw', background: C.white }}>
       <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, letterSpacing: '0.1em', textAlign: 'center', marginBottom: 12 }}>CONEXIONES</p>
@@ -367,7 +372,14 @@ function SectionConnections({ onConnect }: { onConnect: () => void }) {
                       <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{conn.name}</div>
                       <div style={{ fontSize: 12, color: C.inkMid }}>{conn.desc}</div>
                     </div>
-                    <button onClick={onConnect} style={{ display: 'flex', alignItems: 'center', gap: 5, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, color: C.ink, cursor: 'pointer' }}>
+                    <button 
+                      onClick={() => {
+                        if (conn.id === 'google_ads') handleGoogleConnect()
+                        else if (conn.id === 'meta') handleMetaConnect()
+                        else onConnect()
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, color: C.ink, cursor: 'pointer' }}
+                    >
                       <span style={{ fontSize: 16 }}>+</span>Conectar
                     </button>
                   </div>
@@ -381,7 +393,6 @@ function SectionConnections({ onConnect }: { onConnect: () => void }) {
   )
 }
 
-/* ─── Stats ──────────────────────────────────── */
 function SectionStats() {
   const stats = [
     { v: '+2.400', l: 'Marketers usando Growlia' },
@@ -403,7 +414,6 @@ function SectionStats() {
   )
 }
 
-/* ─── Templates ──────────────────────────────── */
 function SectionTemplates() {
   return (
     <section id="templates" style={{ padding: '80px 5vw', backgroundImage: `radial-gradient(${C.borderHov} 1px, transparent 1px)`, backgroundSize: '24px 24px', background: C.bgDot }}>
@@ -440,7 +450,6 @@ function SectionTemplates() {
   )
 }
 
-/* ─── Pricing ──────────────────────────────── */
 function SectionPricing({ onCTA }: { onCTA: () => void }) {
   const [anual, setAnual] = useState(true)
   return (
@@ -487,7 +496,6 @@ function SectionPricing({ onCTA }: { onCTA: () => void }) {
   )
 }
 
-/* ─── CTA Final ───────────────────────────────── */
 function CTAFinal({ onCTA }: { onCTA: () => void }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${C.blue} 0%, #1D4ED8 100%)`, padding: '72px 5vw', textAlign: 'center' }}>
@@ -500,7 +508,6 @@ function CTAFinal({ onCTA }: { onCTA: () => void }) {
   )
 }
 
-/* ─── Footer ─────────────────────────────────── */
 function Footer() {
   return (
     <footer style={{ background: C.white, borderTop: `1px solid ${C.border}`, padding: '52px 5vw 28px' }}>
@@ -522,7 +529,6 @@ function Footer() {
   )
 }
 
-/* ─── Modal Registro ────────────────────────── */
 function RegisterModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({ nombre: '', email: '', password: '' })
