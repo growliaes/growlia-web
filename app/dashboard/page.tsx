@@ -70,14 +70,16 @@ export default function DashboardPage() {
     const clientId = '708427883725-33ql01ep5aa8e6od515er94j7rm7i81m.apps.googleusercontent.com'
     const redirectUri = encodeURIComponent('https://api.growlia.es/api/auth/google/callback')
     const scopes = encodeURIComponent('https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile')
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent`
+    const state = user.id
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes}&access_type=offline&prompt=consent&state=${state}`
   }
 
   const handleConnectMeta = () => {
     const appId = '859352396692840'
     const redirectUri = encodeURIComponent('https://api.growlia.es/api/auth/meta/callback')
     const scopes = encodeURIComponent('ads_read,ads_management,business_management')
-    window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scopes}&response_type=code&state=demo`
+    const state = user.id
+    window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scopes}&response_type=code&state=${state}`
   }
 
   if (!user) {
