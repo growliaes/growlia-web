@@ -31,6 +31,35 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [forgot, setForgot] = useState(false)
+
+  const translateError = (msg: string) => {
+    const m = msg.toLowerCase()
+    if (m.includes('invalid login credentials')) return 'Email o contraseña incorrectos.'
+    if (m.includes('email not confirmed')) return 'Tienes que confirmar tu email antes de entrar. Revisa tu bandeja de entrada.'
+    if (m.includes('user already registered')) return 'Ya existe una cuenta con este email. Inicia sesión o recupera tu contraseña.'
+    if (m.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.'
+    if (m.includes('rate limit') || m.includes('security purposes')) return 'Demasiados intentos. Espera un minuto y vuelve a probar.'
+    if (m.includes('invalid email') || m.includes('unable to validate email')) return 'El email no es válido.'
+    return 'Ha ocurrido un error. Inténtalo de nuevo.'
+  }
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setSuccess('')
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset`,
+    })
+    setLoading(false)
+    if (resetError && !resetError.message.toLowerCase().includes('not found')) {
+      setError(translateError(resetError.message))
+      return
+    }
+    // Mensaje genérico: no revelamos si el email existe o no
+    setSuccess('Si existe una cuenta con ese email, recibirás un enlace para crear una nueva contraseña en unos minutos. Revisa también la carpeta de spam.')
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,7 +74,7 @@ export default function AuthPage() {
       })
 
       if (signInError) {
-        setError(signInError.message)
+        setError(translateError(signInError.message))
         setLoading(false)
         return
       }
@@ -82,7 +111,7 @@ export default function AuthPage() {
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        setError(translateError(signUpError.message))
         setLoading(false)
         return
       }
@@ -163,7 +192,7 @@ export default function AuthPage() {
           {(['login', 'signup'] as const).map(t => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setForgot(false); setError(''); setSuccess('') }}
               style={{
                 flex: 1,
                 padding: '16px',
@@ -183,7 +212,12 @@ export default function AuthPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={tab === 'login' ? handleLogin : handleSignup} style={{ padding: '24px' }}>
+        <form onSubmit={forgot ? handleForgot : tab === 'login' ? handleLogin : handleSignup} style={{ padding: '24px' }}>
+          {forgot && (
+            <p style={{ fontSize: 13, color: C.inkMid, margin: '0 0 16px', lineHeight: 1.5 }}>
+              Escribe el email de tu cuenta y te enviaremos un enlace para crear una contraseña nueva.
+            </p>
+          )}
           {error && (
             <div style={{
               padding: '12px',
@@ -272,6 +306,7 @@ export default function AuthPage() {
             />
           </div>
 
+          {!forgot && (
           <div style={{ marginBottom: 20 }}>
             <label style={{
               display: 'block',
@@ -299,15 +334,27 @@ export default function AuthPage() {
               }}
               disabled={loading}
             />
+            {tab === 'login' && (
+              <div style={{ textAlign: 'right', marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => { setForgot(true); setError(''); setSuccess('') }}
+                  style={{ background: 'none', border: 'none', padding: 0, color: C.blue, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  ¿Has olvidado tu contraseña?
+                </button>
+              </div>
+            )}
           </div>
+          )}
 
           <button
             type="submit"
-            disabled={loading || !email || !password}
+            disabled={loading || !email || (!forgot && !password)}
             style={{
               width: '100%',
               padding: '12px',
-              background: loading || !email || !password ? C.inkLight : C.blue,
+              background: loading || !email || (!forgot && !password) ? C.inkLight : C.blue,
               border: 'none',
               borderRadius: 10,
               color: '#fff',
@@ -317,8 +364,18 @@ export default function AuthPage() {
               transition: 'all 0.2s',
             }}
           >
-            {loading ? 'Cargando...' : tab === 'login' ? 'Iniciar sesión' : 'Registrarse'}
+            {loading ? 'Cargando...' : forgot ? 'Enviar enlace' : tab === 'login' ? 'Iniciar sesión' : 'Registrarse'}
           </button>
+
+          {forgot && (
+            <button
+              type="button"
+              onClick={() => { setForgot(false); setError(''); setSuccess('') }}
+              style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: C.inkMid, fontSize: 13, cursor: 'pointer' }}
+            >
+              ← Volver a iniciar sesión
+            </button>
+          )}
         </form>
 
         {/* Footer */}
