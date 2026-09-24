@@ -51,8 +51,28 @@ export default function ResetPasswordPage() {
     let cancelled = false
 
     const init = async () => {
-      // El enlace del email llega con ?code=... (flujo PKCE): lo canjeamos por una sesión
-      const code = new URLSearchParams(window.location.search).get('code')
+      const params = new URLSearchParams(window.location.search)
+
+      // Enlace de la plantilla de email (?token_hash=...&type=recovery):
+      // funciona aunque se abra en otro dispositivo o navegador
+      const tokenHash = params.get('token_hash')
+      if (tokenHash) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: 'recovery',
+        })
+        if (cancelled) return
+        if (otpError) {
+          setStatus('invalid')
+          return
+        }
+        window.history.replaceState({}, '', '/auth/reset')
+        setStatus('ready')
+        return
+      }
+
+      // Enlace con ?code=... (flujo PKCE): solo funciona en el mismo navegador
+      const code = params.get('code')
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         if (cancelled) return
@@ -167,7 +187,7 @@ export default function ResetPasswordPage() {
                 Este enlace ha caducado o ya se ha usado.
               </p>
               <p style={{ fontSize: 13, color: C.inkMid, margin: '0 0 20px', lineHeight: 1.5 }}>
-                Por seguridad, los enlaces solo sirven una vez y deben abrirse en el mismo navegador donde los pediste.
+                Por seguridad, cada enlace solo sirve una vez y caduca al cabo de una hora. Pide uno nuevo y ábrelo en cuanto te llegue.
               </p>
               <a href="/auth" style={{
                 display: 'inline-block',
