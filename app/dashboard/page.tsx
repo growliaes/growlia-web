@@ -228,6 +228,246 @@ function PerformanceTab({ getToken, hasConnections, goToConnections }: {
   )
 }
 
+const ACTION_STATUS: Record<string, { label: string; color: string }> = {
+  executed: { label: 'Aplicada', color: '#065F46' },
+  rejected: { label: 'Descartada', color: '#64748B' },
+  failed: { label: 'No aplicada', color: '#991B1B' },
+  undone: { label: 'Deshecha', color: '#92400E' },
+  executing: { label: 'Aplicando...', color: '#1E40AF' },
+}
+
+function describeAction(a: any) {
+  const cur = a.params?.currency || 'EUR'
+  if (a.type === 'pause_campaign') return 'Pausar la campaña'
+  if (a.type === 'change_budget') {
+    const up = a.params.to > a.params.from
+    return `${up ? 'Subir' : 'Bajar'} el presupuesto diario de ${fmtMoney(a.params.from, cur)} a ${fmtMoney(a.params.to, cur)}`
+  }
+  return a.type
+}
+
+function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
+  getToken: () => Promise<string | null>
+  hasConnections: boolean
+  goToConnections: () => void
+  firstName: string
+}) {
+  const [data, setData] = useState<any>(null)
+  const [actions, setActions] = useState<{ pending: any[]; history: any[] }>({ pending: [], history: [] })
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const loadActions = useCallback(async () => {
+    const token = await getToken()
+    const res = await fetch(`${API_URL}/api/actions`, { headers: { Authorization: `Bearer ${token}` } })
+    if (res.ok) setActions(await res.json())
+  }, [getToken])
+
+  const load = useCallback(async () => {
+    if (!hasConnections) { setLoading(false); return }
+    setLoading(true)
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/api/campaigns`, { headers: { Authorization: `Bearer ${token}` } })
+      if (res.ok) setData(await res.json())
+      await loadActions()
+    } finally {
+      setLoading(false)
+    }
+  }, [getToken, hasConnections, loadActions])
+
+  useEffect(() => { load() }, [load])
+
+  const decide = async (id: string, op: 'approve' | 'reject' | 'undo') => {
+    if (op === 'approve' && !confirm('Growlia aplicará este cambio ahora mismo en la plataforma. ¿Continuar?')) return
+    if (op === 'undo' && !confirm('¿Deshacer este cambio y volver a la situación anterior?')) return
+    setBusy(id)
+    setNotice(null)
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/api/actions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, op }),
+      })
+      const body = await res.json()
+      setNotice({ ok: res.ok, text: body.message || body.error || 'Hecho.' })
+      await loadActions()
+    } catch {
+      setNotice({ ok: false, text: 'No hemos podido completar la acción. Inténtalo de nuevo.' })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const hour = new Date().getHours()
+  const greeting = hour < 14 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches'
+
+  if (!hasConnections) return (
+    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, textAlign: 'center' }}>
+      <h3 style={{ fontSize: 18, color: C.ink, margin: '0 0 8px' }}>{greeting}{firstName ? `, ${firstName}` : ''}</h3>
+      <p style={{ fontSize: 14, color: C.inkMid, margin: '0 0 20px', lineHeight: 1.5 }}>Conecta tus cuentas y cada mañana tendrás aquí el resumen de tus campañas y las acciones recomendadas.</p>
+      <button onClick={goToConnections} style={{ padding: '10px 20px', background: C.blue, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Conectar Google o Meta</button>
+    </div>
+  )
+
+  if (loading) return <p style={{ color: C.inkMid }}>Preparando tu resumen...</p>
+
+  const b = data?.briefing
+  const observe = data?.autopilotMode === 'observe'
+
+  return (
+    <div>
+      <div style={{ background: C.ink, color: '#fff', borderRadius: 14, padding: 22, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 6 }}>
+          {greeting}{firstName ? `, ${firstName}` : ''} · {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+          {b?.headline || 'Aún no hay datos suficientes'}
+        </h2>
+        {b ? (
+          <div style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.92 }}>
+            {b.lines.map((l: string, i: number) => <p key={i} style={{ margin: '0 0 6px' }}>{l}</p>)}
+            {b.focus && (
+              <p style={{ margin: '12px 0 0', padding: '10px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: 8 }}>
+                <strong>Lo más importante hoy:</strong> {b.focus}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, lineHeight: 1.5 }}>
+            {data?.errors?.[0]?.message || 'En cuanto tus campañas tengan actividad, aquí verás el resumen del día.'}
+          </p>
+        )}
+      </div>
+
+      {notice && (
+        <div style={{ padding: '12px 14px', borderRadius: 10, marginBottom: 16, fontSize: 14, lineHeight: 1.5, background: notice.ok ? '#ECFDF5' : '#FEF2F2', border: `1px solid ${notice.ok ? '#6EE7B7' : '#FCA5A5'}`, color: notice.ok ? '#065F46' : '#991B1B' }}>
+          {notice.text}
+        </div>
+      )}
+
+      <h3 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: '0 0 4px' }}>
+        Acciones recomendadas {actions.pending.length > 0 && <span style={{ color: C.inkLight, fontWeight: 600 }}>({actions.pending.length})</span>}
+      </h3>
+      <p style={{ fontSize: 13, color: C.inkMid, margin: '0 0 12px', lineHeight: 1.5 }}>
+        {observe
+          ? 'Estás en modo Observar: Growlia solo te avisa, no propone cambios. Puedes cambiarlo en Configuración.'
+          : 'Growlia no toca nada sin tu aprobación. Antes de aplicar, comprueba que la campaña sigue igual, y puedes deshacer durante 7 días.'}
+      </p>
+
+      {actions.pending.length === 0 ? (
+        <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, fontSize: 14, color: C.inkMid, marginBottom: 24 }}>
+          No hay acciones pendientes. Growlia revisa tus campañas cada día y te propondrá cambios cuando tengan sentido.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+          {actions.pending.map(a => (
+            <div key={a.id} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 12, color: C.inkMid, marginBottom: 4 }}>{PLATFORM_NAME[a.platform] || a.platform} · {a.campaign_name}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, marginBottom: 6 }}>{describeAction(a)}</div>
+              <div style={{ fontSize: 13, color: C.inkMid, lineHeight: 1.5 }}><strong style={{ color: C.ink }}>Por qué:</strong> {a.reason}</div>
+              {a.expected_impact && <div style={{ fontSize: 13, color: C.inkMid, lineHeight: 1.5, marginTop: 4 }}><strong style={{ color: C.ink }}>Impacto esperado:</strong> {a.expected_impact}</div>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button onClick={() => decide(a.id, 'approve')} disabled={!!busy} style={{ flex: 1, padding: 10, background: C.blue, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 13, cursor: busy ? 'wait' : 'pointer' }}>
+                  {busy === a.id ? 'Aplicando...' : 'Aprobar y aplicar'}
+                </button>
+                <button onClick={() => decide(a.id, 'reject')} disabled={!!busy} style={{ padding: '10px 14px', background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, color: C.inkMid, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  Descartar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {actions.history.length > 0 && (
+        <>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: C.ink, margin: '0 0 12px' }}>Historial de cambios</h3>
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+            {actions.history.map((a, i) => {
+              const st = ACTION_STATUS[a.status] || { label: a.status, color: C.inkMid }
+              const canUndo = a.status === 'executed' && a.executed_at && Date.now() - new Date(a.executed_at).getTime() < 7 * 86400_000
+              return (
+                <div key={a.id} style={{ padding: '12px 16px', borderTop: i ? `1px solid ${C.border}` : 'none', display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>{describeAction(a)}</div>
+                    <div style={{ fontSize: 12, color: C.inkLight, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {a.campaign_name} · {new Date(a.executed_at || a.decided_at || a.created_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    {a.status === 'failed' && a.error && <div style={{ fontSize: 12, color: '#991B1B', marginTop: 2 }}>{a.error}</div>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: st.color }}>{st.label}</span>
+                    {canUndo && (
+                      <button onClick={() => decide(a.id, 'undo')} disabled={!!busy} style={{ padding: '6px 10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12, fontWeight: 600, color: C.ink, cursor: 'pointer' }}>
+                        Deshacer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AutopilotSettings({ userId }: { userId: string }) {
+  const supabase = createClientComponentClient()
+  const [mode, setMode] = useState<string>('suggest')
+  const [maxChange, setMaxChange] = useState<number>(0.2)
+  const [saved, setSaved] = useState('')
+
+  useEffect(() => {
+    supabase.from('profiles').select('autopilot_mode, max_budget_change').eq('id', userId).maybeSingle()
+      .then(({ data }) => {
+        if (data) { setMode(data.autopilot_mode); setMaxChange(Number(data.max_budget_change)) }
+      })
+  }, [supabase, userId])
+
+  const save = async (patch: Record<string, any>) => {
+    const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
+    setSaved(error ? 'No se ha podido guardar.' : 'Guardado.')
+    setTimeout(() => setSaved(''), 2000)
+  }
+
+  const modes = [
+    { id: 'observe', title: 'Observar', desc: 'Solo alertas y recomendaciones. Growlia no propone cambios.' },
+    { id: 'suggest', title: 'Sugerir', desc: 'Growlia propone cambios concretos y tú los apruebas con un clic.' },
+    { id: 'auto', title: 'Automático', desc: 'Aplica los cambios solo, dentro de tus límites, y te avisa de todo.', soon: true },
+  ]
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginBottom: 4 }}>Piloto automático</div>
+      <p style={{ fontSize: 13, color: C.inkMid, margin: '0 0 12px' }}>Decide cuánta autonomía tiene Growlia sobre tus campañas.</p>
+      <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+        {modes.map(m => (
+          <button key={m.id} disabled={m.soon} onClick={() => { setMode(m.id); save({ autopilot_mode: m.id }) }}
+            style={{ textAlign: 'left', padding: 14, borderRadius: 10, cursor: m.soon ? 'not-allowed' : 'pointer', opacity: m.soon ? 0.6 : 1, background: mode === m.id ? C.blueLight : C.white, border: `1px solid ${mode === m.id ? C.blue : C.border}` }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.ink }}>{m.title} {m.soon && <span style={{ fontSize: 11, color: C.inkLight, fontWeight: 600 }}>· próximamente</span>}</div>
+            <div style={{ fontSize: 12, color: C.inkMid, marginTop: 2 }}>{m.desc}</div>
+          </button>
+        ))}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 6 }}>Cambio máximo de presupuesto por acción</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[0.1, 0.2, 0.3].map(v => (
+          <button key={v} onClick={() => { setMaxChange(v); save({ max_budget_change: v }) }}
+            style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: maxChange === v ? C.blue : C.white, color: maxChange === v ? '#fff' : C.ink, border: `1px solid ${maxChange === v ? C.blue : C.border}` }}>
+            {Math.round(v * 100)}%
+          </button>
+        ))}
+      </div>
+      <p style={{ fontSize: 12, color: C.inkLight, margin: '8px 0 0' }}>Recomendado: 20%. Cambios mayores pueden reiniciar la fase de aprendizaje de Google y Meta.{saved && <strong style={{ color: C.green }}> {saved}</strong>}</p>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -235,7 +475,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [connections, setConnections] = useState<any[]>([])
   const [loadingConnections, setLoadingConnections] = useState(true)
-  const [tab, setTab] = useState<'performance' | 'connections' | 'settings'>('performance')
+  const [tab, setTab] = useState<'home' | 'performance' | 'connections' | 'settings'>('home')
   const [flash, setFlash] = useState<{ type: 'ok' | 'warn' | 'error'; text: string } | null>(null)
   const [connecting, setConnecting] = useState<string | null>(null)
 
@@ -269,7 +509,7 @@ export default function DashboardPage() {
         .find(k => k && FLASH[k])
       if (key) {
         setFlash(FLASH[key])
-        if (params.get('connected')) setTab('performance')
+        if (params.get('connected')) setTab('home')
       } else if (params.get('error')) {
         setFlash({ type: 'error', text: 'No hemos podido completar la conexión. Inténtalo de nuevo y, si se repite, escríbenos a support@growlia.es.' })
       }
@@ -381,12 +621,16 @@ export default function DashboardPage() {
         )}
 
         <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, marginBottom: 28, overflowX: 'auto' }}>
-          {([['performance', 'Rendimiento'], ['connections', 'Conexiones'], ['settings', 'Configuración']] as const).map(([t, label]) => (
+          {([['home', 'Inicio'], ['performance', 'Rendimiento'], ['connections', 'Conexiones'], ['settings', 'Configuración']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '12px 18px', border: 'none', background: 'transparent', borderBottom: tab === t ? `2px solid ${C.blue}` : '2px solid transparent', color: tab === t ? C.blue : C.inkMid, fontWeight: tab === t ? 800 : 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {label}
             </button>
           ))}
         </div>
+
+        {tab === 'home' && !loadingConnections && (
+          <HomeTab getToken={getToken} hasConnections={connections.length > 0} goToConnections={() => setTab('connections')} firstName={(user.user_metadata?.full_name || '').split(' ')[0]} />
+        )}
 
         {tab === 'performance' && !loadingConnections && (
           <PerformanceTab getToken={getToken} hasConnections={connections.length > 0} goToConnections={() => setTab('connections')} />
@@ -415,6 +659,7 @@ export default function DashboardPage() {
         {tab === 'settings' && (
           <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 24 }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: C.ink, margin: '0 0 20px' }}>Configuración</h2>
+            <AutopilotSettings userId={user.id} />
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.inkMid, marginBottom: 4 }}>Email</div>
               <div style={{ fontSize: 14, color: C.ink }}>{user.email}</div>
