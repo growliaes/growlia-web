@@ -23,7 +23,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-geist-sans), 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   color: var(--ink);
   background: var(--surface);
@@ -203,3 +203,16 @@ input:focus, textarea:focus { outline: none; }
   .l-shot .g-kpi + .g-kpi { border-top: 0; }
   .l-shot .g-kpi:nth-child(3) { border-left: 1px solid var(--line-2); }
 }
+
+/* ── Páginas legales ──────────────────────────────────────── */
+.legal h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; margin: 40px 0 10px; }
+.legal h3 { font-size: 16px; font-weight: 600; margin: 22px 0 6px; }
+.legal p, .legal li { font-size: 16px; line-height: 1.7; color: var(--ink-2); }
+.legal p + p { margin-top: 12px; }
+.legal ul { padding-left: 20px; margin-top: 8px; }
+.legal li + li { margin-top: 6px; }
+.legal strong { color: var(--ink); font-weight: 600; }
+.legal a { color: var(--accent); }
+.legal table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 15px; }
+.legal th, .legal td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+.legal th { color: var(--ink); font-weight: 600; }
