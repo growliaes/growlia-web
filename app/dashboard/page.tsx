@@ -342,6 +342,29 @@ function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
         )}
       </div>
 
+      {data?.pacing && (() => {
+        const p = data.pacing
+        const cur = data.campaigns?.[0]?.currency || 'EUR'
+        const pct = Math.min(100, (p.spent / p.monthlyBudget) * 100)
+        const proj = Math.min(100, (p.projected / p.monthlyBudget) * 100)
+        const color = p.status === 'over' ? C.red : p.status === 'under' ? '#F59E0B' : C.green
+        return (
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
+              <strong style={{ color: C.ink }}>Presupuesto del mes</strong>
+              <span style={{ color: C.inkMid }}>{fmtMoney(p.spent, cur)} de {fmtMoney(p.monthlyBudget, cur)}</span>
+            </div>
+            <div style={{ position: 'relative', height: 10, background: C.bg, borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: 0, width: `${proj}%`, background: color, opacity: 0.25 }} />
+              <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: color }} />
+            </div>
+            <div style={{ fontSize: 12, color: C.inkMid, marginTop: 8 }}>
+              Previsión de cierre: <strong style={{ color }}>{fmtMoney(p.projected, cur)}</strong> · ritmo recomendado {fmtMoney(p.recommendedDaily, cur)}/día · {p.daysLeft} días restantes
+            </div>
+          </div>
+        )
+      })()}
+
       {notice && (
         <div style={{ padding: '12px 14px', borderRadius: 10, marginBottom: 16, fontSize: 14, lineHeight: 1.5, background: notice.ok ? '#ECFDF5' : '#FEF2F2', border: `1px solid ${notice.ok ? '#6EE7B7' : '#FCA5A5'}`, color: notice.ok ? '#065F46' : '#991B1B' }}>
           {notice.text}
@@ -421,11 +444,16 @@ function AutopilotSettings({ userId }: { userId: string }) {
   const [mode, setMode] = useState<string>('suggest')
   const [maxChange, setMaxChange] = useState<number>(0.2)
   const [saved, setSaved] = useState('')
+  const [monthly, setMonthly] = useState('')
 
   useEffect(() => {
-    supabase.from('profiles').select('autopilot_mode, max_budget_change').eq('id', userId).maybeSingle()
+    supabase.from('profiles').select('autopilot_mode, max_budget_change, monthly_budget').eq('id', userId).maybeSingle()
       .then(({ data }) => {
-        if (data) { setMode(data.autopilot_mode); setMaxChange(Number(data.max_budget_change)) }
+        if (data) {
+          setMode(data.autopilot_mode)
+          setMaxChange(Number(data.max_budget_change))
+          setMonthly(data.monthly_budget ? String(data.monthly_budget) : '')
+        }
       })
   }, [supabase, userId])
 
@@ -454,6 +482,14 @@ function AutopilotSettings({ userId }: { userId: string }) {
           </button>
         ))}
       </div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 6 }}>Presupuesto mensual total (todas las plataformas)</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+        <input type="number" inputMode="decimal" min="0" value={monthly} onChange={e => setMonthly(e.target.value)} placeholder="Ej. 3000"
+          style={{ flex: 1, maxWidth: 200, padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 14, background: C.bg }} />
+        <button onClick={() => save({ monthly_budget: Number(monthly) > 0 ? Number(monthly) : null })}
+          style={{ padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: C.blue, color: '#fff', border: 'none' }}>Guardar</button>
+      </div>
+      <p style={{ fontSize: 12, color: C.inkLight, margin: '0 0 18px' }}>Growlia vigila que no te pases ni te quedes corto, y no propone subidas si vas por encima del ritmo.</p>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 6 }}>Cambio máximo de presupuesto por acción</div>
       <div style={{ display: 'flex', gap: 8 }}>
         {[0.1, 0.2, 0.3].map(v => (
