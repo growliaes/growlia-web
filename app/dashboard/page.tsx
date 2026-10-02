@@ -504,6 +504,84 @@ function AutopilotSettings({ userId }: { userId: string }) {
   )
 }
 
+function formatAccountId(platform: string, id: string) {
+  if (platform === 'google' && /^\d{10}$/.test(id)) return `${id.slice(0, 3)}-${id.slice(3, 6)}-${id.slice(6)}`
+  return id.replace(/^act_/, '')
+}
+
+function AccountPicker({ conn, getToken, onDone, onCancel }: {
+  conn: any
+  getToken: () => Promise<string | null>
+  onDone: (name: string) => void
+  onCancel?: () => void
+}) {
+  const options: any[] = conn.available_accounts || []
+  const [selected, setSelected] = useState<string>(conn.ad_account_id !== 'pending_selection' ? conn.ad_account_id : '')
+  const [query, setQuery] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const filtered = options.filter(o => !query || `${o.name} ${o.id} ${o.via || ''}`.toLowerCase().includes(query.toLowerCase()))
+
+  const confirm = async () => {
+    if (!selected) return
+    setSaving(true)
+    setError('')
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/api/connections/select`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: conn.platform, accountId: selected }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error)
+      onDone(body.account?.name || '')
+    } catch (e: any) {
+      setError(e?.message || 'No se ha podido guardar la selección.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ background: C.white, border: `2px solid ${C.blue}`, borderRadius: 14, padding: 20, marginBottom: 20 }}>
+      <h3 style={{ fontSize: 17, fontWeight: 800, color: C.ink, margin: '0 0 4px' }}>
+        ¿Qué cuenta de {PLATFORM_NAME[conn.platform]} gestiona Growlia?
+      </h3>
+      <p style={{ fontSize: 13, color: C.inkMid, margin: '0 0 14px', lineHeight: 1.5 }}>
+        Hemos encontrado {options.length} cuentas. Growlia solo leerá y propondrá cambios en la que elijas, y puedes cambiarla cuando quieras.
+      </p>
+      {options.length > 6 && (
+        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por nombre o ID"
+          style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 14, marginBottom: 10, background: C.bg }} />
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto', marginBottom: 14 }}>
+        {filtered.map(o => (
+          <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${selected === o.id ? C.blue : C.border}`, background: selected === o.id ? C.blueLight : C.white }}>
+            <input type="radio" name={`acc-${conn.platform}`} checked={selected === o.id} onChange={() => setSelected(o.id)} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.name}</div>
+              <div style={{ fontSize: 12, color: C.inkLight }}>
+                {formatAccountId(conn.platform, o.id)} · {o.currency}{o.via ? ` · vía ${o.via}` : ''}{o.active === false ? ' · inactiva' : ''}
+              </div>
+            </div>
+          </label>
+        ))}
+        {filtered.length === 0 && <p style={{ fontSize: 13, color: C.inkMid }}>Ninguna cuenta coincide con la búsqueda.</p>}
+      </div>
+      {error && <p style={{ fontSize: 13, color: C.red, margin: '0 0 10px' }}>{error}</p>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={confirm} disabled={!selected || saving} style={{ flex: 1, padding: 11, background: selected ? C.blue : C.inkLight, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: saving ? 'wait' : 'pointer' }}>
+          {saving ? 'Guardando...' : 'Usar esta cuenta'}
+        </button>
+        {onCancel && (
+          <button onClick={onCancel} style={{ padding: '11px 16px', background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, color: C.inkMid, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Cancelar</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -514,6 +592,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<'home' | 'performance' | 'connections' | 'settings'>('home')
   const [flash, setFlash] = useState<{ type: 'ok' | 'warn' | 'error'; text: string } | null>(null)
   const [connecting, setConnecting] = useState<string | null>(null)
+  const [picking, setPicking] = useState<string | null>(null)
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -523,7 +602,7 @@ export default function DashboardPage() {
   const loadConnections = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('connections')
-      .select('id, platform, account_name, ad_account_id, last_synced_at, sync_error, created_at')
+      .select('id, platform, account_name, ad_account_id, available_accounts, last_synced_at, sync_error, created_at')
       .eq('user_id', userId)
     setConnections(data || [])
     setLoadingConnections(false)
@@ -537,6 +616,13 @@ export default function DashboardPage() {
       setUser(session.user)
       const conns = await loadConnections(session.user.id)
       if (conns.length === 0) setTab('connections')
+      // Si falta elegir cuenta, lo primero es eso
+      const pending = conns.find((c: any) => c.ad_account_id === 'pending_selection')
+      const selectParam = new URLSearchParams(window.location.search).get('select')
+      if (pending || selectParam) {
+        setTab('connections')
+        setPicking(selectParam || pending.platform)
+      }
 
       // Mensaje al volver de Google/Meta
       const params = new URLSearchParams(window.location.search)
@@ -601,13 +687,19 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: C.ink, margin: 0 }}>{PLATFORM_NAME[p]}</h3>
             <p style={{ fontSize: 12, color: C.inkLight, margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {conn ? (conn.account_name || 'Cuenta conectada') : subtitle}
+              {conn ? (conn.ad_account_id === 'pending_selection' ? 'Falta elegir la cuenta' : `${conn.account_name || 'Cuenta conectada'} · ${formatAccountId(p, conn.ad_account_id || '')}`) : subtitle}
             </p>
           </div>
           {conn && <span style={{ fontSize: 11, fontWeight: 700, color: '#065F46', background: '#D1FAE5', borderRadius: 6, padding: '4px 8px' }}>Conectado</span>}
         </div>
         {conn?.sync_error && (
           <p style={{ fontSize: 12, color: '#92400E', background: '#FFFBEB', borderRadius: 8, padding: '8px 10px', margin: '0 0 12px', lineHeight: 1.4 }}>{conn.sync_error}</p>
+        )}
+        {conn && conn.ad_account_id === 'pending_selection' && (
+          <button onClick={() => setPicking(p)} style={{ width: '100%', padding: 10, marginBottom: 8, background: C.blue, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Elegir cuenta</button>
+        )}
+        {conn && conn.ad_account_id !== 'pending_selection' && (conn.available_accounts || []).length > 1 && (
+          <button onClick={() => setPicking(p)} style={{ width: '100%', padding: 9, marginBottom: 8, background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, color: C.ink, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Cambiar cuenta ({conn.available_accounts.length} disponibles)</button>
         )}
         {conn ? (
           <div style={{ display: 'flex', gap: 8 }}>
@@ -674,6 +766,20 @@ export default function DashboardPage() {
 
         {tab === 'connections' && (
           <div>
+            {picking && connected(picking) && (
+              <AccountPicker
+                key={picking}
+                conn={connected(picking)}
+                getToken={getToken}
+                onCancel={connected(picking)?.ad_account_id !== 'pending_selection' ? () => setPicking(null) : undefined}
+                onDone={async (name) => {
+                  setPicking(null)
+                  await loadConnections(user.id)
+                  setFlash({ type: 'ok', text: `Listo: Growlia gestionará la cuenta "${name}".` })
+                  setTab('home')
+                }}
+              />
+            )}
             <h2 style={{ fontSize: 20, fontWeight: 800, color: C.ink, margin: '0 0 6px' }}>Tus plataformas</h2>
             <p style={{ fontSize: 14, color: C.inkMid, margin: '0 0 20px', lineHeight: 1.5 }}>
               Growlia se conecta con los permisos oficiales de cada plataforma. Tus credenciales se guardan cifradas y puedes desconectar en cualquier momento.
