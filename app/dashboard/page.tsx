@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 
@@ -582,6 +582,123 @@ function AccountPicker({ conn, getToken, onDone, onCancel }: {
   )
 }
 
+const SUGGESTIONS = [
+  '¿Qué campaña me trae los clientes más baratos?',
+  '¿Por qué ha cambiado mi coste por conversión esta semana?',
+  '¿Dónde pondrías 500 € más de presupuesto?',
+  '¿Qué campaña pausarías y por qué?',
+]
+
+function ChatTab({ getToken, hasConnections, goToConnections }: {
+  getToken: () => Promise<string | null>
+  hasConnections: boolean
+  goToConnections: () => void
+}) {
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [messages, loading])
+
+  const send = async (text: string) => {
+    const q = text.trim()
+    if (!q || loading) return
+    const next = [...messages, { role: 'user' as const, content: q }]
+    setMessages(next)
+    setInput('')
+    setLoading(true)
+    setError('')
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/api/ai/chat`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: next }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || 'error')
+      setMessages([...next, { role: 'assistant', content: body.reply }])
+    } catch (e: any) {
+      setError(e?.message && e.message !== 'error' ? e.message : 'No hemos podido responder ahora. Inténtalo de nuevo.')
+      setMessages(messages) // devolvemos la pregunta al cuadro para reintentar
+      setInput(q)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!hasConnections) return (
+    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, textAlign: 'center' }}>
+      <h3 style={{ fontSize: 17, color: C.ink, margin: '0 0 8px' }}>Pregúntale a Growlia</h3>
+      <p style={{ fontSize: 14, color: C.inkMid, margin: '0 0 20px', lineHeight: 1.5 }}>Conecta una plataforma y podrás preguntar lo que quieras sobre tus campañas, con tus datos reales.</p>
+      <button onClick={goToConnections} style={{ padding: '10px 20px', background: C.blue, border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Conectar Google o Meta</button>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: C.ink, margin: 0 }}>Pregúntale a Growlia</h2>
+        <p style={{ fontSize: 13, color: C.inkMid, margin: '4px 0 0', lineHeight: 1.5 }}>Responde con los datos reales de tus cuentas de los últimos 14 días. Si algo no está en los datos, te lo dirá.</p>
+      </div>
+
+      {messages.length === 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {SUGGESTIONS.map(q => (
+            <button key={q} onClick={() => send(q)} disabled={loading}
+              style={{ padding: '9px 12px', background: C.white, border: `1px solid ${C.border}`, borderRadius: 20, fontSize: 13, color: C.ink, cursor: 'pointer', textAlign: 'left' }}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{
+            alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+            maxWidth: '88%',
+            padding: '12px 14px',
+            borderRadius: 14,
+            fontSize: 14,
+            lineHeight: 1.55,
+            whiteSpace: 'pre-wrap',
+            background: m.role === 'user' ? C.blue : C.white,
+            color: m.role === 'user' ? '#fff' : C.ink,
+            border: m.role === 'user' ? 'none' : `1px solid ${C.border}`,
+          }}>
+            {m.content}
+          </div>
+        ))}
+        {loading && (
+          <div style={{ alignSelf: 'flex-start', padding: '12px 14px', borderRadius: 14, background: C.white, border: `1px solid ${C.border}`, fontSize: 14, color: C.inkMid }}>
+            Revisando tus campañas...
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      {error && <div style={{ padding: 12, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, color: '#991B1B', fontSize: 13 }}>{error}</div>}
+
+      <form onSubmit={e => { e.preventDefault(); send(input) }} style={{ display: 'flex', gap: 8, position: 'sticky', bottom: 12 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribe tu pregunta..." maxLength={2000} disabled={loading}
+          style={{ flex: 1, padding: '12px 14px', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 15, background: C.white, outline: 'none' }} />
+        <button type="submit" disabled={loading || !input.trim()}
+          style={{ padding: '12px 18px', background: input.trim() && !loading ? C.blue : C.inkLight, border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: loading ? 'wait' : 'pointer' }}>
+          Enviar
+        </button>
+      </form>
+      {messages.length > 0 && (
+        <button onClick={() => { setMessages([]); setError('') }} style={{ alignSelf: 'center', background: 'none', border: 'none', color: C.inkMid, fontSize: 12, cursor: 'pointer' }}>
+          Empezar una conversación nueva
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -589,7 +706,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [connections, setConnections] = useState<any[]>([])
   const [loadingConnections, setLoadingConnections] = useState(true)
-  const [tab, setTab] = useState<'home' | 'performance' | 'connections' | 'settings'>('home')
+  const [tab, setTab] = useState<'home' | 'performance' | 'chat' | 'connections' | 'settings'>('home')
   const [flash, setFlash] = useState<{ type: 'ok' | 'warn' | 'error'; text: string } | null>(null)
   const [connecting, setConnecting] = useState<string | null>(null)
   const [picking, setPicking] = useState<string | null>(null)
@@ -749,7 +866,7 @@ export default function DashboardPage() {
         )}
 
         <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, marginBottom: 28, overflowX: 'auto' }}>
-          {([['home', 'Inicio'], ['performance', 'Rendimiento'], ['connections', 'Conexiones'], ['settings', 'Configuración']] as const).map(([t, label]) => (
+          {([['home', 'Inicio'], ['performance', 'Rendimiento'], ['chat', 'Pregúntale'], ['connections', 'Conexiones'], ['settings', 'Configuración']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '12px 18px', border: 'none', background: 'transparent', borderBottom: tab === t ? `2px solid ${C.blue}` : '2px solid transparent', color: tab === t ? C.blue : C.inkMid, fontWeight: tab === t ? 800 : 600, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {label}
             </button>
@@ -762,6 +879,10 @@ export default function DashboardPage() {
 
         {tab === 'performance' && !loadingConnections && (
           <PerformanceTab getToken={getToken} hasConnections={connections.length > 0} goToConnections={() => setTab('connections')} />
+        )}
+
+        {tab === 'chat' && !loadingConnections && (
+          <ChatTab getToken={getToken} hasConnections={connections.length > 0} goToConnections={() => setTab('connections')} />
         )}
 
         {tab === 'connections' && (
