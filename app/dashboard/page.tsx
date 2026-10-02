@@ -699,6 +699,69 @@ function ChatTab({ getToken, hasConnections, goToConnections }: {
   )
 }
 
+const HEALTH_STYLE: Record<string, { icon: string; color: string }> = {
+  ok: { icon: '✓', color: '#065F46' },
+  warning: { icon: '!', color: '#92400E' },
+  critical: { icon: '✕', color: '#991B1B' },
+}
+
+function HealthPanel({ conn, getToken, onUpdated }: { conn: any; getToken: () => Promise<string | null>; onUpdated: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const checks: any[] = conn.health || []
+  if (!checks.length && conn.ad_account_id === 'pending_selection') return null
+
+  const issues = checks.filter(c => c.status !== 'ok')
+  const critical = checks.some(c => c.status === 'critical')
+
+  const recheck = async () => {
+    setChecking(true)
+    try {
+      const token = await getToken()
+      await fetch(`${API_URL}/api/connections/health`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: conn.platform }),
+      })
+      onUpdated()
+      setOpen(true)
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 12, paddingTop: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <button onClick={() => setOpen(!open)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: !checks.length ? C.inkMid : critical ? '#991B1B' : issues.length ? '#92400E' : '#065F46', textAlign: 'left' }}>
+          {!checks.length ? 'Salud de la cuenta: sin revisar' : issues.length ? `Salud de la cuenta: ${issues.length} ${issues.length === 1 ? 'punto' : 'puntos'} a revisar` : 'Salud de la cuenta: todo correcto'} {checks.length > 0 && (open ? '▴' : '▾')}
+        </button>
+        <button onClick={recheck} disabled={checking} style={{ background: 'none', border: 'none', color: C.blue, fontSize: 12, fontWeight: 600, cursor: checking ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+          {checking ? 'Revisando...' : 'Revisar ahora'}
+        </button>
+      </div>
+      {open && checks.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+          {[...checks].sort((a, b) => ({ critical: 0, warning: 1, ok: 2 } as any)[a.status] - ({ critical: 0, warning: 1, ok: 2 } as any)[b.status]).map(c => {
+            const st = HEALTH_STYLE[c.status] || HEALTH_STYLE.warning
+            return (
+              <div key={c.id} style={{ display: 'flex', gap: 10, fontSize: 12, lineHeight: 1.45 }}>
+                <span style={{ color: st.color, fontWeight: 800, width: 14, flexShrink: 0 }}>{st.icon}</span>
+                <div>
+                  <div style={{ fontWeight: 700, color: C.ink }}>{c.title}</div>
+                  <div style={{ color: C.inkMid }}>{c.detail}</div>
+                  {c.fix && c.status !== 'ok' && <div style={{ color: C.ink, marginTop: 2 }}><strong>Cómo arreglarlo:</strong> {c.fix}</div>}
+                </div>
+              </div>
+            )
+          })}
+          {conn.health_checked_at && <div style={{ fontSize: 11, color: C.inkLight }}>Última revisión: {new Date(conn.health_checked_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -719,7 +782,7 @@ export default function DashboardPage() {
   const loadConnections = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('connections')
-      .select('id, platform, account_name, ad_account_id, available_accounts, last_synced_at, sync_error, created_at')
+      .select('id, platform, account_name, ad_account_id, available_accounts, last_synced_at, sync_error, health, health_checked_at, created_at')
       .eq('user_id', userId)
     setConnections(data || [])
     setLoadingConnections(false)
@@ -828,6 +891,7 @@ export default function DashboardPage() {
             {connecting === p ? 'Abriendo...' : 'Conectar'}
           </button>
         )}
+        {conn && <HealthPanel conn={conn} getToken={getToken} onUpdated={() => loadConnections(user.id)} />}
       </div>
     )
   }
