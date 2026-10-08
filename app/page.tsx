@@ -202,6 +202,7 @@ export default function Home() {
         <span style={{ display: 'flex', gap: 20 }}>
           <a href="/privacidad">Privacidad</a>
           <a href="/terminos">Términos</a>
+          <a href="/aviso-legal">Aviso legal</a>
           <a href="mailto:support@growlia.es">support@growlia.es</a>
         </span>
       </footer>

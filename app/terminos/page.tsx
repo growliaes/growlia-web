@@ -1,118 +1,58 @@
-'use client'
+import type { Metadata } from 'next'
+import { LegalPage } from '../_legal/LegalPage'
+import { LEGAL } from '../_legal/config'
 
-export default function TermsOfService() {
+export const metadata: Metadata = { title: 'Términos del servicio · Growlia' }
+
+export default function Terminos() {
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '80px 24px 60px', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', lineHeight: 1.7 }}>
-      <a href="/" style={{ color: '#2563EB', textDecoration: 'none', fontSize: 14, display: 'inline-block', marginBottom: 32 }}>← Volver a Growlia</a>
+    <LegalPage title="Términos del servicio">
+      <p>Estos términos regulan el uso de Growlia, prestado por <strong>{LEGAL.titular}</strong> (NIF {LEGAL.nif}). Al crear una cuenta los aceptas.</p>
 
-      <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.02em' }}>Términos de Servicio</h1>
-      <p style={{ color: '#64748B', fontSize: 14, marginBottom: 40 }}>Última actualización: Enero 2025</p>
+      <h2>1. Qué es Growlia</h2>
+      <p>Growlia es un software que se conecta a tus cuentas de Google Ads y Meta Ads, analiza su rendimiento, te envía alertas y recomendaciones, y te propone cambios concretos (por ejemplo, ajustar un presupuesto o pausar una campaña) que se aplican solo si los apruebas.</p>
+      <p>Growlia está dirigido a profesionales y empresas que gestionan su propia publicidad.</p>
 
-      <p style={{ marginBottom: 24 }}>
-        Bienvenido a Growlia. Al utilizar nuestro servicio, aceptas estos términos. Por favor léelos con atención.
-      </p>
+      <h2>2. Tu cuenta</h2>
+      <p>Debes dar datos verdaderos, mantener tu contraseña en secreto y avisarnos si sospechas un acceso no autorizado. Solo puedes conectar cuentas publicitarias que tengas derecho a gestionar.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>1. Descripción del servicio</h2>
-      <p style={{ marginBottom: 16 }}>
-        Growlia es una plataforma SaaS (Software as a Service) que permite a empresas y profesionales del marketing gestionar, analizar y optimizar sus campañas publicitarias en Google Ads, Meta Ads, TikTok Ads y otras plataformas mediante inteligencia artificial.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        El servicio incluye conexión OAuth con plataformas publicitarias, dashboard unificado, agente IA con Claude (Anthropic), automatizaciones, alertas y reportes.
-      </p>
+      <h2>3. Acceso anticipado</h2>
+      <p>Durante el acceso anticipado Growlia es gratuito y algunas funciones pueden cambiar o fallar. Antes de que el servicio pase a ser de pago te informaremos de los precios y nunca te cobraremos sin que contrates un plan de forma expresa.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>2. Cuenta de usuario</h2>
-      <p style={{ marginBottom: 16 }}>
-        Para utilizar Growlia necesitas crear una cuenta proporcionando un email válido y una contraseña segura. Eres responsable de mantener la confidencialidad de tus credenciales y de toda actividad realizada desde tu cuenta.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Debes ser mayor de 18 años o tener la edad legal para celebrar contratos en tu jurisdicción. Si representas a una empresa, garantizas tener autoridad para vincular a esa empresa a estos términos.
-      </p>
-
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>3. Suscripciones y pagos</h2>
-      <p style={{ marginBottom: 12 }}>Growlia se ofrece bajo modelo de suscripción mensual o anual:</p>
-      <ul style={{ paddingLeft: 24, marginBottom: 16 }}>
-        <li><strong>Starter:</strong> 49€/mes o 39€/mes (anual)</li>
-        <li><strong>Growth:</strong> 99€/mes o 79€/mes (anual)</li>
-        <li><strong>Agency:</strong> 249€/mes o 199€/mes (anual)</li>
+      <h2>4. Tus cuentas publicitarias y tus decisiones</h2>
+      <ul>
+        <li>Tus cuentas publicitarias, su facturación y su contenido son tuyos. Growlia no crea cuentas a tu nombre ni se queda con ellas.</li>
+        <li>Las recomendaciones de Growlia son orientativas. <strong>Tú decides qué cambios aprobar</strong> y eres responsable de la inversión publicitaria y del contenido de tus anuncios.</li>
+        <li>Antes de aplicar un cambio aprobado, Growlia comprueba que la campaña sigue como cuando se propuso. Puedes deshacer los cambios aplicados durante 7 días desde la propia aplicación.</li>
+        <li>Debes cumplir las políticas publicitarias de Google y Meta. Growlia no responde de las decisiones que tomen esas plataformas sobre tus cuentas o anuncios.</li>
       </ul>
-      <p style={{ marginBottom: 16 }}>
-        Los pagos se procesan a través de Stripe. La suscripción se renueva automáticamente al final de cada período. Puedes cancelar en cualquier momento desde tu panel de cuenta; mantendrás acceso hasta el final del período pagado.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Ofrecemos un período de prueba gratuito de 14 días. Si cancelas antes de que termine la prueba, no se te cobrará nada.
-      </p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>4. Conexión con plataformas publicitarias</h2>
-      <p style={{ marginBottom: 16 }}>
-        Para usar Growlia necesitas conectar tus cuentas de Google Ads, Meta Ads u otras plataformas mediante OAuth. Al hacerlo, autorizas a Growlia a leer datos de tus campañas y, si lo permites explícitamente, a ejecutar acciones como pausar campañas o ajustar presupuestos.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Tú eres el único responsable del contenido de tus anuncios, del cumplimiento de las políticas publicitarias de cada plataforma y del presupuesto que destinas a cada campaña. Growlia no se hace responsable de pérdidas económicas derivadas de campañas mal configuradas, presupuestos excesivos o decisiones tomadas en base a las recomendaciones de IA.
-      </p>
+      <h2>5. Inteligencia artificial</h2>
+      <p>Algunas funciones, como el asistente, usan modelos de inteligencia artificial. Pueden cometer errores; revisa la información importante antes de tomar decisiones.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>5. Uso aceptable</h2>
-      <p style={{ marginBottom: 12 }}>Te comprometes a no usar Growlia para:</p>
-      <ul style={{ paddingLeft: 24, marginBottom: 16 }}>
-        <li>Actividades ilegales o que violen derechos de terceros.</li>
-        <li>Spam, fraude publicitario o esquemas piramidales.</li>
-        <li>Contenido que promueva discriminación, violencia u odio.</li>
-        <li>Intentar acceder a cuentas de otros usuarios sin autorización.</li>
-        <li>Realizar ingeniería inversa, copiar o intentar replicar nuestro servicio.</li>
-        <li>Sobrecargar nuestros servidores con peticiones automatizadas no autorizadas.</li>
-      </ul>
-      <p style={{ marginBottom: 16 }}>
-        Nos reservamos el derecho de suspender cuentas que violen estos términos sin previo aviso.
-      </p>
+      <h2>6. Sin garantía de resultados</h2>
+      <p>El rendimiento publicitario depende de muchos factores ajenos a Growlia (mercado, competencia, producto, algoritmos de las plataformas). No garantizamos un resultado concreto.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>6. Inteligencia artificial</h2>
-      <p style={{ marginBottom: 16 }}>
-        Growlia utiliza modelos de IA de Anthropic (Claude) para analizar tus campañas y generar recomendaciones. La IA puede equivocarse, ofrecer información imprecisa o generar recomendaciones inadecuadas para tu caso específico.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Las recomendaciones de la IA son orientativas y no constituyen asesoramiento financiero, legal ni profesional. Tú eres responsable de revisar y aprobar cualquier acción ejecutada en tus cuentas publicitarias.
-      </p>
+      <h2>7. Uso aceptable</h2>
+      <p>No puedes usar Growlia para actividades ilegales, fraude publicitario, acceder a cuentas ajenas, saturar el servicio con peticiones automatizadas ni copiar o realizar ingeniería inversa del software.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>7. Propiedad intelectual</h2>
-      <p style={{ marginBottom: 16 }}>
-        Todo el contenido de Growlia (software, diseño, marca, documentación) es propiedad de Growlia y está protegido por las leyes de propiedad intelectual. Te concedemos una licencia limitada, no exclusiva e intransferible para usar el servicio según estos términos.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Los datos de tus campañas son y seguirán siendo de tu propiedad. Growlia solo accede a ellos para prestarte el servicio.
-      </p>
+      <h2>8. Disponibilidad</h2>
+      <p>Trabajamos para que Growlia esté disponible siempre, pero puede haber interrupciones por mantenimiento, por fallos de proveedores o por cambios en las API de Google y Meta.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>8. Disponibilidad del servicio</h2>
-      <p style={{ marginBottom: 16 }}>
-        Nos esforzamos por mantener Growlia disponible 24/7, pero no garantizamos un uptime del 100%. Pueden producirse interrupciones por mantenimiento, actualizaciones o problemas técnicos. No nos hacemos responsables de pérdidas derivadas de períodos de inactividad.
-      </p>
+      <h2>9. Responsabilidad</h2>
+      <p>En la medida en que lo permita la ley, no respondemos de daños indirectos ni del lucro cesante. Nuestra responsabilidad total frente a ti se limita a lo que hayas pagado por Growlia en los 12 meses anteriores al hecho que la origine. Nada de lo anterior limita la responsabilidad que no pueda limitarse por ley, como la derivada de dolo o culpa grave.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>9. Limitación de responsabilidad</h2>
-      <p style={{ marginBottom: 16 }}>
-        En la medida permitida por la ley, Growlia no será responsable de daños indirectos, incidentales, especiales o consecuentes derivados del uso del servicio. Nuestra responsabilidad máxima en cualquier caso queda limitada al importe pagado por el usuario en los 12 meses anteriores al hecho que origine la reclamación.
-      </p>
+      <h2>10. Baja</h2>
+      <p>Puedes desconectar tus plataformas y dejar de usar Growlia en cualquier momento, y pedirnos que eliminemos tu cuenta escribiendo a <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Podemos suspender cuentas que incumplan estos términos.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>10. Cancelación y reembolsos</h2>
-      <p style={{ marginBottom: 16 }}>
-        Puedes cancelar tu suscripción en cualquier momento desde tu panel. La cancelación tendrá efecto al final del período pagado. No ofrecemos reembolsos por períodos parciales ya iniciados, salvo en casos de fallo grave del servicio atribuible a Growlia.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Cumplimos con el derecho de desistimiento de 14 días para consumidores europeos cuando aplique según la normativa.
-      </p>
+      <h2>11. Cambios</h2>
+      <p>Si cambiamos estos términos de forma relevante, te avisaremos con antelación por email o dentro de Growlia.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>11. Modificaciones de los términos</h2>
-      <p style={{ marginBottom: 16 }}>
-        Podemos actualizar estos términos ocasionalmente. Te notificaremos por email si los cambios son materiales. El uso continuado del servicio tras los cambios implica aceptación de los nuevos términos.
-      </p>
+      <h2>12. Ley aplicable</h2>
+      <p>Estos términos se rigen por la ley española. Los conflictos se someterán a los juzgados y tribunales que correspondan conforme a la ley.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>12. Ley aplicable y jurisdicción</h2>
-      <p style={{ marginBottom: 16 }}>
-        Estos términos se rigen por la legislación española. Cualquier disputa se resolverá ante los tribunales españoles, sin perjuicio de los derechos que la normativa de protección de consumidores otorgue a usuarios particulares.
-      </p>
-
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>13. Contacto</h2>
-      <p style={{ marginBottom: 16 }}>
-        Para cualquier duda sobre estos términos, escríbenos a <strong>hola@growlia.es</strong>.
-      </p>
-    </div>
+      <h2>13. Contacto</h2>
+      <p><a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a></p>
+    </LegalPage>
   )
 }
-

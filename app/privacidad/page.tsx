@@ -1,102 +1,84 @@
-'use client'
+import type { Metadata } from 'next'
+import { LegalPage } from '../_legal/LegalPage'
+import { LEGAL } from '../_legal/config'
 
-export default function PrivacyPolicy() {
+export const metadata: Metadata = { title: 'Política de privacidad · Growlia' }
+
+export default function Privacidad() {
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '80px 24px 60px', fontFamily: "'DM Sans', sans-serif", color: '#0F172A', lineHeight: 1.7 }}>
-      <a href="/" style={{ color: '#2563EB', textDecoration: 'none', fontSize: 14, display: 'inline-block', marginBottom: 32 }}>← Volver a Growlia</a>
+    <LegalPage title="Política de privacidad">
+      <p>Esta política explica qué datos trata Growlia, para qué, durante cuánto tiempo y qué derechos tienes. La hemos escrito para que se entienda sin ser abogado.</p>
 
-      <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.02em' }}>Política de Privacidad</h1>
-      <p style={{ color: '#64748B', fontSize: 14, marginBottom: 40 }}>Última actualización: Enero 2025</p>
+      <h2>1. Responsable del tratamiento</h2>
+      <p><strong>{LEGAL.titular}</strong>, con NIF {LEGAL.nif} y domicilio en {LEGAL.domicilio}. Contacto: <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.</p>
 
-      <p style={{ marginBottom: 24 }}>
-        En Growlia respetamos tu privacidad y nos comprometemos a proteger los datos personales que compartes con nosotros. Esta política explica qué información recopilamos, cómo la usamos y qué derechos tienes.
-      </p>
+      <h2>2. Qué datos tratamos</h2>
+      <ul>
+        <li><strong>Datos de tu cuenta:</strong> nombre, email y contraseña (guardada de forma irreversible, nunca en texto legible).</li>
+        <li><strong>Datos de tus plataformas publicitarias:</strong> cuando conectas Google Ads o Meta Ads, recibimos un acceso autorizado por ti y leemos la información de tus cuentas publicitarias: nombre e identificador de la cuenta, campañas, presupuestos, estrategia de puja y métricas (inversión, impresiones, clics, conversiones, valor de conversión, cuota de impresiones, frecuencia), además del estado de la cuenta, la facturación, las acciones de conversión y el píxel.</li>
+        <li><strong>Cambios que apruebas:</strong> el historial de propuestas de Growlia, tu decisión y el resultado de aplicarlas.</li>
+        <li><strong>Preguntas al asistente:</strong> las preguntas que haces y sus respuestas.</li>
+        <li><strong>Datos técnicos:</strong> registros de funcionamiento del servicio. Para limitar el uso del chat de la página de inicio guardamos una huella cifrada e irreversible de tu dirección IP, nunca la IP en sí.</li>
+      </ul>
+      <p>No tratamos datos de las personas que ven tus anuncios. Las métricas que leemos son agregadas por campaña.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>1. Responsable del tratamiento</h2>
-      <p style={{ marginBottom: 16 }}>
-        El responsable del tratamiento de tus datos es Growlia (en adelante, "nosotros"), accesible a través del dominio growlia.es y contactable mediante el email hola@growlia.es.
-      </p>
+      <h2>3. Para qué los usamos y con qué base legal</h2>
+      <table>
+        <thead><tr><th>Finalidad</th><th>Base legal</th></tr></thead>
+        <tbody>
+          <tr><td>Crear y mantener tu cuenta, conectar tus plataformas, mostrarte el rendimiento, generar alertas, el resumen diario y las propuestas de cambio, y aplicar los cambios que apruebes.</td><td>Ejecución del contrato (art. 6.1.b RGPD).</td></tr>
+          <tr><td>Responder a tus preguntas con el asistente de IA.</td><td>Ejecución del contrato.</td></tr>
+          <tr><td>Seguridad, prevención de abusos y límites de uso.</td><td>Interés legítimo en proteger el servicio (art. 6.1.f).</td></tr>
+          <tr><td>Comunicaciones sobre el servicio (cambios, incidencias, seguridad).</td><td>Ejecución del contrato.</td></tr>
+          <tr><td>Facturación, cuando el servicio sea de pago.</td><td>Obligación legal (art. 6.1.c).</td></tr>
+        </tbody>
+      </table>
+      <p>No vendemos tus datos ni los usamos para publicidad. Tampoco los usamos para entrenar modelos de inteligencia artificial.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>2. Qué datos recopilamos</h2>
-      <p style={{ marginBottom: 12 }}>Recopilamos los siguientes tipos de datos:</p>
-      <ul style={{ paddingLeft: 24, marginBottom: 16 }}>
-        <li><strong>Datos de cuenta:</strong> nombre, email y empresa cuando te registras.</li>
-        <li><strong>Datos de plataformas publicitarias:</strong> al conectar tus cuentas de Google Ads, Meta Ads u otras plataformas mediante OAuth, accedemos a información de tus campañas (gasto, impresiones, conversiones, ROAS) para analizarlas y optimizarlas.</li>
-        <li><strong>Datos de uso:</strong> cómo interactúas con nuestra plataforma, páginas visitadas, funcionalidades utilizadas.</li>
-        <li><strong>Datos de pago:</strong> procesados directamente por Stripe; nosotros no almacenamos información de tarjetas.</li>
+      <h2>4. Decisiones automatizadas</h2>
+      <p>Growlia analiza tus campañas de forma automática y propone cambios, pero en el modo actual <strong>ningún cambio se aplica sin tu aprobación expresa</strong>. Si en el futuro activas un modo automático, será por decisión tuya, con los límites que configures, con registro de cada acción y con la posibilidad de deshacerla.</p>
+
+      <h2>5. Datos de Google</h2>
+      <p>El uso que hace Growlia de la información recibida de las API de Google y su transferencia a cualquier otra aplicación se ajustan a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Política de datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de uso limitado (Limited Use).</p>
+      <p>En concreto: solo usamos los datos de Google Ads para prestarte las funciones de Growlia que ves en el producto; no los transferimos a terceros salvo a los proveedores necesarios para prestar el servicio y en las condiciones de esta política; no los usamos para publicidad; y ninguna persona los lee salvo con tu permiso, por motivos de seguridad o por obligación legal.</p>
+
+      <h2>6. Datos de Meta</h2>
+      <p>Solo usamos los datos de Meta Ads para prestarte el servicio, conforme a las Condiciones de la Plataforma de Meta. Puedes eliminar el acceso y tus datos como se explica en <a href="/eliminar-datos">Cómo eliminar tus datos</a>.</p>
+
+      <h2>7. Con quién compartimos datos</h2>
+      <p>Solo con los proveedores que necesitamos para que Growlia funcione, que actúan como encargados del tratamiento bajo contrato:</p>
+      <ul>
+        <li><strong>Supabase:</strong> base de datos y autenticación. Los datos se alojan en la Unión Europea (Irlanda).</li>
+        <li><strong>Vercel:</strong> alojamiento de la web y de la aplicación.</li>
+        <li><strong>Anthropic:</strong> modelo de IA que redacta las respuestas del asistente. Recibe los datos de rendimiento necesarios para responder a cada pregunta.</li>
+        <li><strong>Stripe:</strong> pagos, cuando el servicio sea de pago. Nosotros no guardamos datos de tarjetas.</li>
+      </ul>
+      <p>Google y Meta son responsables independientes de los datos de tus cuentas publicitarias en sus plataformas.</p>
+
+      <h2>8. Transferencias internacionales</h2>
+      <p>Algunos proveedores (Vercel, Anthropic y Stripe) pueden tratar datos en Estados Unidos. Estas transferencias se realizan con las garantías previstas en el RGPD, como las cláusulas contractuales tipo aprobadas por la Comisión Europea o la adhesión del proveedor al Marco de Privacidad de Datos UE-EE. UU.</p>
+
+      <h2>9. Cuánto tiempo los conservamos</h2>
+      <ul>
+        <li><strong>Accesos a tus plataformas:</strong> hasta que desconectes la plataforma, momento en que se borran.</li>
+        <li><strong>Datos de campañas en caché:</strong> se sustituyen en cada actualización.</li>
+        <li><strong>Cuenta, historial de cambios y conversaciones con el asistente:</strong> mientras tengas la cuenta. Si la eliminas, los borramos en un máximo de 30 días.</li>
+        <li><strong>Contadores de uso del chat público:</strong> 30 días.</li>
+        <li><strong>Datos de facturación:</strong> el plazo que exija la ley.</li>
       </ul>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>3. Para qué usamos tus datos</h2>
-      <p style={{ marginBottom: 12 }}>Usamos tus datos exclusivamente para:</p>
-      <ul style={{ paddingLeft: 24, marginBottom: 16 }}>
-        <li>Proporcionarte el servicio de gestión y optimización de campañas publicitarias.</li>
-        <li>Analizar el rendimiento de tus campañas y generar recomendaciones con IA.</li>
-        <li>Procesar pagos de tu suscripción.</li>
-        <li>Enviarte comunicaciones importantes sobre el servicio.</li>
-        <li>Mejorar nuestra plataforma y desarrollar nuevas funcionalidades.</li>
-      </ul>
-      <p style={{ marginBottom: 16 }}>
-        <strong>Nunca vendemos ni compartimos tus datos con terceros para fines publicitarios.</strong>
-      </p>
+      <h2>10. Seguridad</h2>
+      <p>Los accesos a tus plataformas publicitarias se guardan cifrados con AES-256. Las comunicaciones van siempre cifradas (HTTPS) y cada usuario solo puede acceder a sus propios datos.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>4. Conexión con Google Ads, Meta Ads y otras plataformas</h2>
-      <p style={{ marginBottom: 16 }}>
-        Cuando conectas una plataforma publicitaria mediante OAuth, recibimos un token de acceso que almacenamos cifrado con AES-256-GCM en nuestra base de datos. Este token nos permite leer datos de tus campañas y, si autorizas, ejecutar acciones como pausar campañas o ajustar presupuestos.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        Nunca tenemos acceso a tu contraseña de Google, Meta o cualquier otra plataforma. Puedes revocar el acceso en cualquier momento desde la configuración de tu cuenta o directamente desde la plataforma correspondiente.
-      </p>
-      <p style={{ marginBottom: 16 }}>
-        El uso que Growlia hace de la información recibida de Google APIs cumple con la <a href="https://developers.google.com/terms/api-services-user-data-policy" style={{ color: '#2563EB' }}>Google API Services User Data Policy</a>, incluyendo los requisitos de Limited Use.
-      </p>
+      <h2>11. Tus derechos</h2>
+      <p>Puedes pedir el acceso, la rectificación, la supresión o la portabilidad de tus datos, así como oponerte a su tratamiento o pedir que se limite, escribiendo a <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Respondemos en un máximo de un mes.</p>
+      <p>Si consideras que no hemos atendido bien tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">aepd.es</a>).</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>5. Conservación de los datos</h2>
-      <p style={{ marginBottom: 16 }}>
-        Conservamos tus datos mientras tengas una cuenta activa con nosotros. Si cancelas tu cuenta, eliminaremos tus datos en un plazo máximo de 30 días, salvo aquellos que estemos legalmente obligados a conservar (por ejemplo, facturas durante 5 años).
-      </p>
+      <h2>12. Cookies</h2>
+      <p>Growlia solo usa las cookies técnicas imprescindibles para mantener tu sesión iniciada. No usamos cookies de analítica ni de publicidad, por lo que no necesitamos pedirte consentimiento para ellas.</p>
 
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>6. Tus derechos (RGPD)</h2>
-      <p style={{ marginBottom: 12 }}>Como usuario europeo, tienes los siguientes derechos sobre tus datos:</p>
-      <ul style={{ paddingLeft: 24, marginBottom: 16 }}>
-        <li><strong>Acceso:</strong> saber qué datos tenemos sobre ti.</li>
-        <li><strong>Rectificación:</strong> corregir datos incorrectos.</li>
-        <li><strong>Supresión:</strong> solicitar que eliminemos tus datos.</li>
-        <li><strong>Oposición:</strong> oponerte a un tratamiento concreto.</li>
-        <li><strong>Portabilidad:</strong> recibir tus datos en formato estructurado.</li>
-        <li><strong>Limitación:</strong> restringir el tratamiento.</li>
-      </ul>
-      <p style={{ marginBottom: 16 }}>
-        Para ejercer cualquiera de estos derechos, escríbenos a hola@growlia.es. Responderemos en un plazo máximo de 30 días.
-      </p>
-
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>7. Seguridad</h2>
-      <p style={{ marginBottom: 16 }}>
-        Aplicamos medidas técnicas y organizativas apropiadas para proteger tus datos: cifrado en tránsito (HTTPS), cifrado en reposo (AES-256-GCM para tokens), control de accesos basado en roles (RLS en base de datos), y auditorías regulares de seguridad.
-      </p>
-
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>8. Servicios de terceros</h2>
-      <p style={{ marginBottom: 12 }}>Growlia utiliza los siguientes servicios externos para funcionar:</p>
-      <ul style={{ paddingLeft: 24, marginBottom: 16 }}>
-        <li><strong>Supabase:</strong> base de datos y autenticación.</li>
-        <li><strong>Vercel:</strong> hosting de la plataforma.</li>
-        <li><strong>Stripe:</strong> procesamiento de pagos.</li>
-        <li><strong>Anthropic Claude:</strong> análisis con inteligencia artificial.</li>
-        <li><strong>Google Ads API, Meta Marketing API:</strong> conexión con plataformas publicitarias.</li>
-      </ul>
-      <p style={{ marginBottom: 16 }}>
-        Cada uno de estos servicios cumple con sus propias políticas de privacidad y normativas RGPD.
-      </p>
-
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>9. Cambios en esta política</h2>
-      <p style={{ marginBottom: 16 }}>
-        Podemos actualizar esta política ocasionalmente. Te notificaremos por email si los cambios son significativos. La fecha de última actualización aparece al inicio del documento.
-      </p>
-
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginTop: 32, marginBottom: 12 }}>10. Contacto</h2>
-      <p style={{ marginBottom: 16 }}>
-        Para cualquier duda sobre esta política o el tratamiento de tus datos, escríbenos a <strong>hola@growlia.es</strong>.
-      </p>
-    </div>
+      <h2>13. Cambios en esta política</h2>
+      <p>Si hacemos cambios importantes, te avisaremos por email o dentro de Growlia antes de que entren en vigor.</p>
+    </LegalPage>
   )
 }
-
