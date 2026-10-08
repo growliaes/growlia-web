@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '../_legal/LegalPage'
-import { LEGAL } from '../_legal/config'
+import { LEGAL, TITULAR, HAS_IDENTITY } from '../_legal/config'
 
 export const metadata: Metadata = { title: 'Términos del servicio · Growlia' }
 
 export default function Terminos() {
   return (
     <LegalPage title="Términos del servicio">
-      <p>Estos términos regulan el uso de Growlia, prestado por <strong>{LEGAL.titular}</strong> (NIF {LEGAL.nif}). Al crear una cuenta los aceptas.</p>
+      <p>Estos términos regulan el uso de Growlia, prestado por <strong>{TITULAR}</strong>{HAS_IDENTITY ? ` (NIF ${LEGAL.nif})` : ''}. Al crear una cuenta los aceptas.</p>
 
       <h2>1. Qué es Growlia</h2>
       <p>Growlia es un software que se conecta a tus cuentas de Google Ads y Meta Ads, analiza su rendimiento, te envía alertas y recomendaciones, y te propone cambios concretos (por ejemplo, ajustar un presupuesto o pausar una campaña) que se aplican solo si los apruebas.</p>

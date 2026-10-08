@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '../_legal/LegalPage'
-import { LEGAL } from '../_legal/config'
+import { LEGAL, TITULAR, HAS_IDENTITY } from '../_legal/config'
 
 export const metadata: Metadata = { title: 'Política de privacidad · Growlia' }
 
@@ -10,7 +10,7 @@ export default function Privacidad() {
       <p>Esta política explica qué datos trata Growlia, para qué, durante cuánto tiempo y qué derechos tienes. La hemos escrito para que se entienda sin ser abogado.</p>
 
       <h2>1. Responsable del tratamiento</h2>
-      <p><strong>{LEGAL.titular}</strong>, con NIF {LEGAL.nif} y domicilio en {LEGAL.domicilio}. Contacto: <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.</p>
+      <p>{HAS_IDENTITY ? <><strong>{LEGAL.titular}</strong>, con NIF {LEGAL.nif} y domicilio en {LEGAL.domicilio}. </> : <><strong>{TITULAR}</strong>. </>}Contacto: <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.</p>
 
       <h2>2. Qué datos tratamos</h2>
       <ul>
