@@ -216,3 +216,28 @@ input:focus, textarea:focus { outline: none; }
 .legal table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 15px; }
 .legal th, .legal td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
 .legal th { color: var(--ink); font-weight: 600; }
+
+/* ── Nueva campaña ─────────────────────────────────────────── */
+.g-textarea { height: auto; padding: 10px 12px; line-height: 1.5; resize: vertical; font-family: inherit; }
+.lc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lc-progress { height: 4px; background: var(--line-2); border-radius: 999px; overflow: hidden; }
+.lc-progress span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .6s ease; }
+.lc-group { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; padding: 20px; }
+.lc-ad { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px; background: var(--surface); }
+.lc-ad-title { color: #1A0DAB; font-size: 18px; line-height: 1.3; margin: 4px 0 6px; }
+.lc-kw { display: inline-block; font-size: 13px; padding: 3px 9px; border-radius: 6px; background: var(--line-2); color: var(--ink); font-variant-numeric: tabular-nums; }
+.lc-kw-neg { color: var(--ink-2); }
+.lc-texts { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line-2); border-radius: var(--radius-sm); }
+.lc-texts li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 12px; font-size: 14px; }
+.lc-texts li + li { border-top: 1px solid var(--line-2); }
+.lc-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding: 0 20px 18px; }
+.lc-why { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); line-height: 1.5; }
+.lc-steps { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 8px; color: var(--ink-2); line-height: 1.5; }
+.lc-hist { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
+.lc-hist + .lc-hist { border-top: 1px solid var(--line-2); }
+.lc-hist:hover, .lc-hist[aria-current='true'] { background: var(--canvas); }
+@media (max-width: 860px) {
+  .lc-group { grid-template-columns: 1fr; }
+  .lc-facts { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) { .lc-grid2 { grid-template-columns: 1fr; } }

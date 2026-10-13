@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
+import LaunchTab from './LaunchTab'
 
 const API_URL = 'https://api.growlia.es'
 
-type Tab = 'home' | 'performance' | 'chat' | 'connections' | 'settings'
+type Tab = 'home' | 'performance' | 'launch' | 'chat' | 'connections' | 'settings'
 
 const PLATFORM_NAME: Record<string, string> = { google: 'Google Ads', meta: 'Meta Ads', linkedin: 'LinkedIn Ads', tiktok: 'TikTok Ads', all: 'Toda la cuenta' }
 
@@ -744,6 +745,7 @@ function DeleteAccount({ getToken, onDeleted }: { getToken: () => Promise<string
 const NAV: { id: Tab; label: string }[] = [
   { id: 'home', label: 'Inicio' },
   { id: 'performance', label: 'Rendimiento' },
+  { id: 'launch', label: 'Nueva campaña' },
   { id: 'chat', label: 'Pregúntale' },
   { id: 'connections', label: 'Conexiones' },
   { id: 'settings', label: 'Configuración' },
@@ -901,6 +903,10 @@ export default function DashboardPage() {
             {tab === 'performance' && !loadingConnections && (
               <PerformanceTab getToken={getToken} hasConnections={connections.length > 0} goToConnections={() => setTab('connections')} />
             )}
+            {tab === 'launch' && !loadingConnections && (
+              <LaunchTab getToken={getToken} userId={user.id} goToConnections={() => setTab('connections')}
+                hasGoogle={!!connected('google') && connected('google')?.ad_account_id !== 'pending_selection'} />
+            )}
             {tab === 'chat' && !loadingConnections && (
               <ChatTab getToken={getToken} hasConnections={connections.length > 0} goToConnections={() => setTab('connections')} />
             )}
@@ -931,6 +937,15 @@ export default function DashboardPage() {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="#0866FF" aria-hidden><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" /></svg>
                   ))}
                 </div>
+                {!connected('google') && (
+                  <div className="g-panel g-pad" style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <p style={{ fontWeight: 600 }}>¿Empiezas de cero?</p>
+                      <p className="g-muted">Cuéntanos tu negocio y Growlia te prepara tu primera campaña de Google, lista para revisar.</p>
+                    </div>
+                    <button className="g-btn" onClick={() => setTab('launch')}>Preparar mi primera campaña</button>
+                  </div>
+                )}
                 <div className="g-panel g-list" style={{ marginTop: 16 }}>
                   {['LinkedIn Ads', 'TikTok Ads'].map(name => (
                     <div key={name} className="g-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px' }}>
