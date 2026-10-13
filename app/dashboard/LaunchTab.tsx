@@ -16,7 +16,8 @@ type Plan = {
 type Launch = {
   id: string; status: 'draft' | 'creating' | 'created' | 'active' | 'failed'; brief: any; plan: Plan
   account_id: string | null; campaign_id: string | null; campaign_name: string | null; error: string | null
-  created_at: string; launched_at: string | null
+  created_at: string; launched_at: string | null; activated_at?: string | null
+  watch?: { checked_at?: string; terms?: number; proposed?: number; insights?: { severity: string; title: string }[] }
 }
 
 const GOALS: { id: Goal; label: string }[] = [
@@ -206,6 +207,31 @@ function AdGroupCard({ g, editable, onSave }: { g: AdGroup; editable: boolean; o
   )
 }
 
+// ── Vigilancia de arranque ───────────────────────────────────
+function WatchPanel({ l }: { l: Launch }) {
+  if (!l.activated_at) return null
+  const day = Math.floor((Date.now() - new Date(l.activated_at).getTime()) / 86400_000) + 1
+  if (day > 14) return null
+  const w = l.watch || {}
+  const issues = w.insights || []
+  return (
+    <div className="g-panel g-pad" style={{ marginTop: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <p style={{ fontWeight: 600 }}>Arranque vigilado: día {day} de 14</p>
+        {w.checked_at && <span className="g-muted" style={{ fontSize: 13 }}>Última revisión: {new Date(w.checked_at).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
+      </div>
+      <div className="lc-progress" style={{ margin: '10px 0 12px' }}><span style={{ width: `${(day / 14) * 100}%` }} /></div>
+      <p className="g-muted" style={{ fontSize: 14 }}>Cada mañana Growlia comprueba que la campaña sale, que los anuncios están aprobados, que gasta lo previsto, que se miden las conversiones y qué búsquedas se están pagando. Durante estos días no propone cambios de presupuesto: la campaña está aprendiendo.</p>
+      {(typeof w.terms === 'number' || issues.length > 0) && (
+        <ul className="lc-why" style={{ marginTop: 10 }}>
+          {typeof w.terms === 'number' && <li>{w.terms} búsquedas revisadas{w.proposed ? `, ${w.proposed} propuestas para excluir (en Inicio)` : ', ninguna para excluir'}.</li>}
+          {issues.map(i => <li key={i.title}>{i.title}</li>)}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // ── Pestaña ──────────────────────────────────────────────────
 export default function LaunchTab({ getToken, userId, hasGoogle, goToConnections }: {
   getToken: () => Promise<string | null>; userId: string; hasGoogle: boolean; goToConnections: () => void
@@ -315,6 +341,7 @@ export default function LaunchTab({ getToken, userId, hasGoogle, goToConnections
             {current.status === 'active' && (
               <div style={{ marginBottom: 16 }}>
                 <Note type="ok">"{current.campaign_name}" está activa. Verás sus resultados en Inicio y Rendimiento a partir de mañana.</Note>
+                <WatchPanel l={current} />
               </div>
             )}
             {current.status === 'creating' && <div style={{ marginBottom: 16 }}><Note type="warn">La campaña se está creando. Recarga en un minuto.</Note></div>}

@@ -240,7 +240,33 @@ function describeAction(a: any) {
     const up = a.params.to > a.params.from
     return `${up ? 'Subir' : 'Bajar'} el presupuesto diario de ${fmtMoney(a.params.from, cur)} a ${fmtMoney(a.params.to, cur)}`
   }
+  if (a.type === 'add_negatives') {
+    const n = a.params?.negatives?.length || 0
+    return `Excluir ${n} ${n === 1 ? 'búsqueda que no encaja' : 'búsquedas que no encajan'}`
+  }
   return a.type
+}
+
+/** Detalle de las negativas propuestas: qué se excluye, por qué y cuánto ha costado */
+function NegativesDetail({ a }: { a: any }) {
+  const list: any[] = a.params?.negatives || []
+  if (!list.length) return null
+  const cur = a.params?.currency || 'EUR'
+  return (
+    <ul style={{ listStyle: 'none', margin: '10px 0 0', padding: 0, border: '1px solid var(--line-2)', borderRadius: 'var(--radius-sm)' }}>
+      {list.slice(0, 12).map((n, i) => (
+        <li key={n.match + n.text} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 12px', fontSize: 14, borderTop: i ? '1px solid var(--line-2)' : undefined }}>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ fontWeight: 550 }}>{n.match === 'EXACT' ? `[${n.text}]` : n.match === 'PHRASE' ? `"${n.text}"` : n.text}</span>
+            {n.reason && <span className="g-muted"> · {n.reason}</span>}
+            {n.match !== 'EXACT' && n.terms?.length > 0 && <span className="g-muted" style={{ display: 'block', fontSize: 13 }}>Ej.: {n.terms.slice(0, 3).join(', ')}</span>}
+          </span>
+          <span className="g-muted num" style={{ flexShrink: 0, fontSize: 13 }}>{fmtMoney(n.cost, cur)}</span>
+        </li>
+      ))}
+      {list.length > 12 && <li className="g-muted" style={{ padding: '8px 12px', fontSize: 13, borderTop: '1px solid var(--line-2)' }}>y {list.length - 12} más</li>}
+    </ul>
+  )
 }
 
 function PacingBar({ pacing, currency }: { pacing: any; currency: string }) {
@@ -382,6 +408,7 @@ function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
                 <p style={{ fontWeight: 600, fontSize: 16, marginTop: 2 }} className="num">{describeAction(a)}</p>
                 <p style={{ color: 'var(--ink-2)', fontSize: 14, marginTop: 6 }}>{a.reason}</p>
                 {a.expected_impact && <p style={{ color: 'var(--ink-2)', fontSize: 14, marginTop: 2 }}>{a.expected_impact}</p>}
+                {a.type === 'add_negatives' && <NegativesDetail a={a} />}
                 <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                   <button className="g-btn g-btn-primary" onClick={() => decide(a.id, 'approve')} disabled={!!busy}>{busy === a.id ? 'Aplicando…' : 'Aprobar y aplicar'}</button>
                   <button className="g-btn" onClick={() => decide(a.id, 'reject')} disabled={!!busy}>Descartar</button>
