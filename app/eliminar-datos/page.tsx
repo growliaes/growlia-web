@@ -18,7 +18,8 @@ export default function EliminarDatos() {
       </ul>
 
       <h2>Eliminar tu cuenta y todos tus datos</h2>
-      <p>Escribe a <a href={`mailto:${LEGAL.email}?subject=Eliminar%20mi%20cuenta`}>{LEGAL.email}</a> desde el email de tu cuenta con el asunto <strong>Eliminar mi cuenta</strong>. Borraremos tu cuenta, tus conexiones, tu historial y tus conversaciones en un máximo de 30 días y te confirmaremos por email cuando esté hecho.</p>
+      <p>En Growlia, entra en <a href="/dashboard">Configuración</a> y pulsa <strong>Eliminar cuenta</strong>. Al confirmar, revocamos el acceso de Growlia en Google y Meta, cancelamos tu suscripción y borramos al momento tu cuenta, tus conexiones, tu historial y tus conversaciones. Tus campañas no se modifican.</p>
+      <p>Si no puedes acceder a tu cuenta, escribe a <a href={`mailto:${LEGAL.email}?subject=Eliminar%20mi%20cuenta`}>{LEGAL.email}</a> desde el email de tu cuenta con el asunto <strong>Eliminar mi cuenta</strong>. Lo haremos en un máximo de 30 días y te lo confirmaremos por email.</p>
     </LegalPage>
   )
 }

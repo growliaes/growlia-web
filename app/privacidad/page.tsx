@@ -71,7 +71,7 @@ export default function Privacidad() {
       <p>Los accesos a tus plataformas publicitarias se guardan cifrados con AES-256. Las comunicaciones van siempre cifradas (HTTPS) y cada usuario solo puede acceder a sus propios datos.</p>
 
       <h2>11. Tus derechos</h2>
-      <p>Puedes pedir el acceso, la rectificación, la supresión o la portabilidad de tus datos, así como oponerte a su tratamiento o pedir que se limite, escribiendo a <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Respondemos en un máximo de un mes.</p>
+      <p>Puedes pedir el acceso, la rectificación, la supresión o la portabilidad de tus datos, así como oponerte a su tratamiento o pedir que se limite, escribiendo a <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Respondemos en un máximo de un mes. La supresión también puedes hacerla tú mismo, al momento, desde Configuración, Eliminar cuenta.</p>
       <p>Si consideras que no hemos atendido bien tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">aepd.es</a>).</p>
 
       <h2>12. Cookies</h2>

@@ -691,6 +691,55 @@ function AutopilotSettings({ userId }: { userId: string }) {
   )
 }
 
+function DeleteAccount({ getToken, onDeleted }: { getToken: () => Promise<string | null>; onDeleted: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const run = async () => {
+    setBusy(true); setError('')
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/api/account/delete`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: text.trim().toUpperCase() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'No se ha podido eliminar la cuenta.')
+      onDeleted()
+    } catch (e: any) {
+      setError(e.message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="g-section">
+      <div className="g-section-head"><h2 className="g-h2">Eliminar cuenta</h2></div>
+      <div className="g-panel g-pad">
+        {!open ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <p className="g-muted" style={{ maxWidth: 520 }}>Revoca el acceso a Google y Meta, cancela la suscripción y borra todos tus datos de Growlia. No se puede deshacer. Tus campañas no se modifican.</p>
+            <button className="g-btn g-btn-sm g-btn-danger" onClick={() => setOpen(true)}>Eliminar cuenta</button>
+          </div>
+        ) : (
+          <div>
+            <p style={{ marginBottom: 10 }}>Escribe <strong>ELIMINAR</strong> para confirmar.</p>
+            <div style={{ display: 'flex', gap: 8, maxWidth: 420, flexWrap: 'wrap' }}>
+              <input className="g-input" value={text} onChange={e => setText(e.target.value)} placeholder="ELIMINAR" aria-label="Confirmación" autoFocus style={{ flex: 1, minWidth: 160 }} />
+              <button className="g-btn g-btn-danger" disabled={busy || text.trim().toUpperCase() !== 'ELIMINAR'} onClick={run}>{busy ? 'Eliminando…' : 'Eliminar definitivamente'}</button>
+              <button className="g-btn" disabled={busy} onClick={() => { setOpen(false); setText(''); setError('') }}>Cancelar</button>
+            </div>
+            {error && <div style={{ marginTop: 12 }}><Note type="error">{error}</Note></div>}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 // ── Página ────────────────────────────────────────────────────
 const NAV: { id: Tab; label: string }[] = [
   { id: 'home', label: 'Inicio' },
@@ -909,6 +958,7 @@ export default function DashboardPage() {
                     <a href="mailto:support@growlia.es" style={{ color: 'var(--ink-2)' }}>support@growlia.es</a>
                   </p>
                 </section>
+                <DeleteAccount getToken={getToken} onDeleted={async () => { await supabase.auth.signOut(); router.push('/?cuenta=eliminada') }} />
               </div>
             )}
           </div>
