@@ -240,11 +240,33 @@ function describeAction(a: any) {
     const up = a.params.to > a.params.from
     return `${up ? 'Subir' : 'Bajar'} el presupuesto diario de ${fmtMoney(a.params.from, cur)} a ${fmtMoney(a.params.to, cur)}`
   }
+  if (a.type === 'pause_keywords') {
+    const n = a.params?.keywords?.length || 0
+    return `Pausar ${n} ${n === 1 ? 'palabra clave que gasta sin convertir' : 'palabras clave que gastan sin convertir'}`
+  }
   if (a.type === 'add_negatives') {
     const n = a.params?.negatives?.length || 0
     return `Excluir ${n} ${n === 1 ? 'búsqueda que no encaja' : 'búsquedas que no encajan'}`
   }
   return a.type
+}
+
+/** Palabras clave propuestas para pausar, con su gasto y clics */
+function KeywordsDetail({ a }: { a: any }) {
+  const list: any[] = a.params?.keywords || []
+  if (!list.length) return null
+  const cur = a.params?.currency || 'EUR'
+  const label = (k: any) => (k.match === 'EXACT' ? `[${k.text}]` : k.match === 'PHRASE' ? `"${k.text}"` : k.text)
+  return (
+    <ul style={{ listStyle: 'none', margin: '10px 0 0', padding: 0, border: '1px solid var(--line-2)', borderRadius: 'var(--radius-sm)' }}>
+      {list.map((k, i) => (
+        <li key={k.resource} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 12px', fontSize: 14, borderTop: i ? '1px solid var(--line-2)' : undefined }}>
+          <span style={{ minWidth: 0 }}><span style={{ fontWeight: 550 }}>{label(k)}</span><span className="g-muted"> · {k.ad_group}</span></span>
+          <span className="g-muted num" style={{ flexShrink: 0, fontSize: 13 }}>{fmtMoney(k.cost, cur)} · {k.clicks} clics · 0 conv.</span>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 /** Detalle de las negativas propuestas: qué se excluye, por qué y cuánto ha costado */
@@ -409,6 +431,7 @@ function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
                 <p style={{ color: 'var(--ink-2)', fontSize: 14, marginTop: 6 }}>{a.reason}</p>
                 {a.expected_impact && <p style={{ color: 'var(--ink-2)', fontSize: 14, marginTop: 2 }}>{a.expected_impact}</p>}
                 {a.type === 'add_negatives' && <NegativesDetail a={a} />}
+                {a.type === 'pause_keywords' && <KeywordsDetail a={a} />}
                 <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                   <button className="g-btn g-btn-primary" onClick={() => decide(a.id, 'approve')} disabled={!!busy}>{busy === a.id ? 'Aplicando…' : 'Aprobar y aplicar'}</button>
                   <button className="g-btn" onClick={() => decide(a.id, 'reject')} disabled={!!busy}>Descartar</button>
@@ -651,15 +674,19 @@ function AutopilotSettings({ userId }: { userId: string }) {
   const [mode, setMode] = useState<string>('suggest')
   const [maxChange, setMaxChange] = useState<number>(0.2)
   const [monthly, setMonthly] = useState('')
+  const [targetCpa, setTargetCpa] = useState('')
+  const [targetRoas, setTargetRoas] = useState('')
   const [saved, setSaved] = useState('')
 
   useEffect(() => {
-    supabase.from('profiles').select('autopilot_mode, max_budget_change, monthly_budget').eq('id', userId).maybeSingle()
+    supabase.from('profiles').select('autopilot_mode, max_budget_change, monthly_budget, target_cpa, target_roas').eq('id', userId).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setMode(data.autopilot_mode)
           setMaxChange(Number(data.max_budget_change))
           setMonthly(data.monthly_budget ? String(data.monthly_budget) : '')
+          setTargetCpa(data.target_cpa ? String(data.target_cpa) : '')
+          setTargetRoas(data.target_roas ? String(data.target_roas) : '')
         }
       })
   }, [supabase, userId])
@@ -690,6 +717,33 @@ function AutopilotSettings({ userId }: { userId: string }) {
               </div>
             </label>
           ))}
+        </div>
+      </section>
+
+      <section className="g-section">
+        <div className="g-section-head"><h2 className="g-h2">Objetivo de negocio</h2></div>
+        <div className="g-panel g-list">
+          <div className="g-row">
+            <p className="g-muted" style={{ marginBottom: 14, maxWidth: '68ch' }}>Es lo que más mejora las recomendaciones. Sin objetivo, Growlia compara cada campaña con la media de tu cuenta, que dice qué campaña es mejor que otra pero no si es rentable. Rellena uno de los dos.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+              <div>
+                <label className="g-label" htmlFor="tcpa">CPA máximo (€ por cliente o contacto)</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input id="tcpa" className="g-input num" type="number" inputMode="decimal" min="0" step="0.5" value={targetCpa} onChange={e => setTargetCpa(e.target.value)} placeholder="40" />
+                  <button className="g-btn" onClick={() => save({ target_cpa: Number(targetCpa) > 0 ? Number(targetCpa) : null })}>Guardar</button>
+                </div>
+                <p className="g-muted" style={{ fontSize: 13, marginTop: 6 }}>Lo máximo que puedes pagar por una conversión y seguir ganando dinero.</p>
+              </div>
+              <div>
+                <label className="g-label" htmlFor="troas">ROAS mínimo (ventas ÷ inversión)</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input id="troas" className="g-input num" type="number" inputMode="decimal" min="0" step="0.1" value={targetRoas} onChange={e => setTargetRoas(e.target.value)} placeholder="4" />
+                  <button className="g-btn" onClick={() => save({ target_roas: Number(targetRoas) > 0 ? Number(targetRoas) : null })}>Guardar</button>
+                </div>
+                <p className="g-muted" style={{ fontSize: 13, marginTop: 6 }}>Para tiendas online. 4 significa 4 € de ventas por cada euro invertido.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
