@@ -386,6 +386,7 @@ function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
 
   const b = data?.briefing
   const observe = data?.autopilotMode === 'observe'
+  const auto = data?.autopilotMode === 'auto'
   const currency = data?.campaigns?.[0]?.currency || 'EUR'
 
   return (
@@ -416,7 +417,9 @@ function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
         <p className="g-muted" style={{ marginTop: -6, marginBottom: 12, maxWidth: '70ch' }}>
           {observe
             ? 'Estás en modo Observar: Growlia solo avisa y no propone cambios. Puedes cambiarlo en Configuración.'
-            : 'Nada se aplica sin tu aprobación. Antes de aplicar comprobamos que la campaña no ha cambiado, y puedes deshacer durante 7 días.'}
+            : auto
+              ? 'Estás en modo Automático: Growlia aplica sola los cambios seguros y aquí quedan los que necesitan tu aprobación. Puedes deshacer cualquier cambio durante 7 días.'
+              : 'Nada se aplica sin tu aprobación. Antes de aplicar comprobamos que la campaña no ha cambiado, y puedes deshacer durante 7 días.'}
         </p>
         {notice && <div style={{ marginBottom: 12 }}><Note type={notice.ok ? 'ok' : 'error'} onClose={() => setNotice(null)}>{notice.text}</Note></div>}
 
@@ -447,7 +450,9 @@ function HomeTab({ getToken, hasConnections, goToConnections, firstName }: {
           <div className="g-section-head"><h2 className="g-h2">Historial de cambios</h2></div>
           <div className="g-panel g-list">
             {actions.history.map(a => {
-              const st = ACTION_STATUS[a.status] || { label: a.status, cls: '' }
+              const st = a.status === 'executed' && a.executed_by === 'autopilot'
+                ? { label: 'Aplicada por Growlia', cls: 'g-tag-pos' }
+                : ACTION_STATUS[a.status] || { label: a.status, cls: '' }
               const canUndo = a.status === 'executed' && a.executed_at && Date.now() - new Date(a.executed_at).getTime() < 7 * 86400_000
               return (
                 <div key={a.id} className="g-row" style={{ display: 'flex', gap: '8px 16px', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', flexWrap: 'wrap' }}>
@@ -700,7 +705,7 @@ function AutopilotSettings({ userId }: { userId: string }) {
   const modes = [
     { id: 'observe', title: 'Observar', desc: 'Solo alertas y recomendaciones. No propone cambios.' },
     { id: 'suggest', title: 'Sugerir', desc: 'Propone cambios concretos y tú los apruebas.' },
-    { id: 'auto', title: 'Automático', desc: 'Aplica los cambios dentro de tus límites y te avisa de todo. Disponible próximamente.', soon: true },
+    { id: 'auto', title: 'Automático', desc: 'Aplica solo los ajustes de presupuesto dentro de tu límite, las negativas y la pausa de palabras clave que no convierten, y te avisa de cada uno. Las subidas de presupuesto solo si has fijado un CPA o ROAS objetivo. Pausar una campaña entera siempre lo apruebas tú. Todo se puede deshacer durante 7 días.' },
   ]
 
   return (
@@ -709,8 +714,8 @@ function AutopilotSettings({ userId }: { userId: string }) {
         <div className="g-section-head"><h2 className="g-h2">Piloto automático</h2>{saved && <span className="g-muted" style={{ color: saved === 'Guardado' ? 'var(--pos)' : 'var(--neg)' }}>{saved}</span>}</div>
         <div className="g-panel g-list" role="radiogroup" aria-label="Nivel de autonomía">
           {modes.map(m => (
-            <label key={m.id} style={{ display: 'flex', gap: 12, padding: '14px 20px', cursor: m.soon ? 'not-allowed' : 'pointer', opacity: m.soon ? 0.55 : 1, background: mode === m.id ? 'var(--accent-soft)' : undefined }}>
-              <input type="radio" name="autopilot" checked={mode === m.id} disabled={m.soon} onChange={() => { setMode(m.id); save({ autopilot_mode: m.id }) }} style={{ marginTop: 4 }} />
+            <label key={m.id} style={{ display: 'flex', gap: 12, padding: '14px 20px', cursor: 'pointer', background: mode === m.id ? 'var(--accent-soft)' : undefined }}>
+              <input type="radio" name="autopilot" checked={mode === m.id} onChange={() => { setMode(m.id); save({ autopilot_mode: m.id }) }} style={{ marginTop: 4 }} />
               <div>
                 <p style={{ fontWeight: 550 }}>{m.title}</p>
                 <p className="g-muted" style={{ fontSize: 14 }}>{m.desc}</p>
